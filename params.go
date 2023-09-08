@@ -19,8 +19,6 @@ var (
 
 )
 
-// opreation gas cost
-
 const (
 	GasLimitBoundDivisor uint64 = 1024               // The bound divisor of the gas limit, used in update calculations.
 	MinGasLimit          uint64 = 5000               // Minimum the gas limit may ever be.

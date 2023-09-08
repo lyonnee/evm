@@ -1,10 +1,10 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/math"
 )
 
 // Config are the configuration options for the Interpreter

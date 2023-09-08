@@ -1,7 +1,6 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
 	"github.com/lyonnee/evm/common"
@@ -857,12 +856,7 @@ func makeLog(size int) executionFunc {
 		}
 
 		d := scope.Memory.GetCopy(int64(mStart.Uint64()), int64(mSize.Uint64()))
-		interpreter.evm.StateDB.AddLog(&types.Log{
-			Address:     scope.Contract.Address(),
-			Topics:      topics,
-			Data:        d,
-			BlockNumber: interpreter.evm.Context.BlockNumber.Uint64(),
-		})
+		interpreter.evm.StateDB.AddLog(common.NewLog(scope.Contract.Address(), topics, d, interpreter.evm.Context.BlockNumber.Uint64()))
 
 		return nil, nil
 	}

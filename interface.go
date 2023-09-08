@@ -1,17 +1,10 @@
 package evm
 
 import (
-	"io"
 	"math/big"
 
 	"github.com/lyonnee/evm/common"
 )
-
-type Log interface {
-	EncodeRLP(io.Writer) error
-	UnmarshalJSON([]byte) error
-	MarshalJSON() ([]byte, error)
-}
 
 type StateDB interface {
 	CreateAccount(common.Address)
@@ -69,7 +62,7 @@ type StateDB interface {
 	RevertToSnapshot(int)
 	Snapshot() int
 
-	AddLog(Log)
+	AddLog(common.Loger)
 	AddPreimage(common.Hash, []byte)
 }
 

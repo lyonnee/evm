@@ -3,8 +3,8 @@ package evm
 import (
 	"errors"
 
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/math"
 )
 
 // memoryGasCost计算内存扩展的二次气体

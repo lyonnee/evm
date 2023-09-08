@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 	"github.com/lyonnee/evm/common"
 	"github.com/lyonnee/evm/math"
@@ -66,7 +65,7 @@ type EVM struct {
 	// Depth is the current call stack
 	depth int
 	// chain rules contains the chain rules for the current epoch
-	chainRules Rules
+	chainRules common.Rules
 	// virtual machine configuration options used to initialise the
 	// evm.
 	Config Config
@@ -224,7 +223,7 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 }
 
 func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
-	if evm.depth > int(params.CallCreateDepth) {
+	if evm.depth > int(CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
 	var snapshot = evm.StateDB.Snapshot()
@@ -319,12 +318,12 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 }
 
 func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
-	contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
+	contractAddr = common.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
 	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
 }
 
 func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
-	contractAddr = crypto.CreateAddress2(caller.Address(), salt.Bytes32(), nil)
+	contractAddr = common.CreateAddress2(caller.Address(), salt.Bytes32(), nil)
 	return evm.create(caller, &codeAndHash{code: code}, gas, endowment, contractAddr, CREATE2)
 }
 
@@ -434,7 +433,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainId uin
 		TxContext:  txCtx,
 		StateDB:    statedb,
 		Config:     config,
-		chainRules: NewRules(blockCtx.BlockNumber),
+		chainRules: common.NewRules(blockCtx.BlockNumber),
 	}
 	evm.interpreter = NewEVMInterpreter(evm)
 	return evm
