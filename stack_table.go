@@ -1,5 +1,7 @@
 package evm
 
+import "github.com/lyonnee/evm/params"
+
 func minSwapStack(n int) int {
 	return minStack(n, n)
 }
@@ -15,7 +17,7 @@ func maxDupStack(n int) int {
 }
 
 func maxStack(pop, push int) int {
-	return int(StackLimit) + pop - push
+	return int(params.StackLimit) + pop - push
 }
 func minStack(pops, push int) int {
 	return pops

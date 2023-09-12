@@ -3,13 +3,14 @@ package evm
 import (
 	"errors"
 
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/math"
+	"github.com/lyonnee/evm/params"
 )
 
 func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-		if contract.Gas <= SstoreSentryGasEIP2200 {
+		if contract.Gas <= params.SstoreSentryGasEIP2200 {
 			return 0, errors.New("not enough gas for reentrancy sentry")
 		}
 
@@ -21,7 +22,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 		)
 
 		if addrPresent, slotPresent := evm.StateDB.SlotInAccessList(contract.Address(), slot); !slotPresent {
-			cost = ColdSloadCostEIP2929
+			cost = params.ColdSloadCostEIP2929
 			// If the caller cannot afford the cost, this change will be rolled back
 			evm.StateDB.AddSlotToAccessList(contract.Address(), slot)
 			if !addrPresent {
@@ -34,17 +35,17 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 		value := common.BytesToHash(y.Bytes())
 
 		if current == value {
-			return cost + WarmStorageReadCostEIP2929, nil
+			return cost + params.WarmStorageReadCostEIP2929, nil
 		}
 		original := evm.StateDB.GetCommittedState(contract.Address(), common.BytesToHash(x.Bytes()))
 		if original == current {
 			if original == common.ZeroHash {
-				return cost + SstoreSetGasEIP2200, nil
+				return cost + params.SstoreSetGasEIP2200, nil
 			}
 			if value == common.ZeroHash {
 				evm.StateDB.AddRefund(clearingRefund)
 			}
-			return cost + (SstoreResetGasEIP2200 - ColdSloadCostEIP2929), nil
+			return cost + (params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929), nil
 		}
 		if original != common.ZeroHash {
 			if current == common.ZeroHash {
@@ -55,12 +56,12 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 		}
 		if original == value {
 			if original == common.ZeroHash {
-				evm.StateDB.AddRefund(SstoreSetGasEIP2200 - WarmStorageReadCostEIP2929)
+				evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.WarmStorageReadCostEIP2929)
 			} else {
-				evm.StateDB.AddRefund((SstoreResetGasEIP2200 - ColdSloadCostEIP2929) - WarmStorageReadCostEIP2929)
+				evm.StateDB.AddRefund((params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929) - params.WarmStorageReadCostEIP2929)
 			}
 		}
-		return cost + WarmStorageReadCostEIP2929, nil
+		return cost + params.WarmStorageReadCostEIP2929, nil
 	}
 }
 
@@ -70,9 +71,9 @@ func gasSLoadEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 
 	if _, slotPresent := evm.StateDB.SlotInAccessList(contract.Address(), slot); !slotPresent {
 		evm.StateDB.AddSlotToAccessList(contract.Address(), slot)
-		return ColdSloadCostEIP2929, nil
+		return params.ColdSloadCostEIP2929, nil
 	}
-	return WarmStorageReadCostEIP2929, nil
+	return params.WarmStorageReadCostEIP2929, nil
 }
 
 func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
@@ -87,7 +88,7 @@ func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 		evm.StateDB.AddAddressToAccessList(addr)
 		var overflow bool
 		// We charge (cold-warm), since 'warm' is already charged as constantGas
-		if gas, overflow = math.SafeAdd(gas, ColdAccountAccessCostEIP2929-WarmStorageReadCostEIP2929); overflow {
+		if gas, overflow = math.SafeAdd(gas, params.ColdAccountAccessCostEIP2929-params.WarmStorageReadCostEIP2929); overflow {
 			return 0, ErrGasUintOverflow
 		}
 		return gas, nil
@@ -102,7 +103,7 @@ func gasEip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 		// If the caller cannot afford the cost, this change will be rolled back
 		evm.StateDB.AddAddressToAccessList(addr)
 		// The warm storage read cost is already charged as constantGas
-		return ColdAccountAccessCostEIP2929 - WarmStorageReadCostEIP2929, nil
+		return params.ColdAccountAccessCostEIP2929 - params.WarmStorageReadCostEIP2929, nil
 	}
 	return 0, nil
 }
@@ -114,7 +115,7 @@ func makeCallVariantGasCallEIP2929(oldCalculator gasFunc) gasFunc {
 		warmAccess := evm.StateDB.AddressInAccessList(addr)
 		// The WarmStorageReadCostEIP2929 (100) is already deducted in the form of a constant cost, so
 		// the cost to charge for cold access, if any, is Cold - Warm
-		coldCost := ColdAccountAccessCostEIP2929 - WarmStorageReadCostEIP2929
+		coldCost := params.ColdAccountAccessCostEIP2929 - params.WarmStorageReadCostEIP2929
 		if !warmAccess {
 			evm.StateDB.AddAddressToAccessList(addr)
 			// Charge the remaining difference here already, to correctly calculate available
@@ -162,11 +163,11 @@ var (
 	//
 	//The other parameters defined in EIP 2200 are unchanged.
 	// see gasSStoreEIP2200(...) in core/vm/gas_table.go for more info about how EIP 2200 is specified
-	gasSStoreEIP2929 = makeGasSStoreFunc(SstoreClearsScheduleRefundEIP2200)
+	gasSStoreEIP2929 = makeGasSStoreFunc(params.SstoreClearsScheduleRefundEIP2200)
 
 	// gasSStoreEIP2539 implements gas cost for SSTORE according to EIP-2539
 	// Replace `SSTORE_CLEARS_SCHEDULE` with `SSTORE_RESET_GAS + ACCESS_LIST_STORAGE_KEY_COST` (4,800)
-	gasSStoreEIP3529 = makeGasSStoreFunc(SstoreClearsScheduleRefundEIP3529)
+	gasSStoreEIP3529 = makeGasSStoreFunc(params.SstoreClearsScheduleRefundEIP3529)
 )
 
 func makeSelfdestructGasFn(refundsEnabled bool) gasFunc {
@@ -178,14 +179,14 @@ func makeSelfdestructGasFn(refundsEnabled bool) gasFunc {
 		if !evm.StateDB.AddressInAccessList(address) {
 			// If the caller cannot afford the cost, this change will be rolled back
 			evm.StateDB.AddAddressToAccessList(address)
-			gas = ColdAccountAccessCostEIP2929
+			gas = params.ColdAccountAccessCostEIP2929
 		}
 		// if empty and transfers value
 		if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-			gas += CreateBySelfdestructGas
+			gas += params.CreateBySelfdestructGas
 		}
 		if refundsEnabled && !evm.StateDB.HasSelfDestructed(contract.Address()) {
-			evm.StateDB.AddRefund(SelfdestructRefundGas)
+			evm.StateDB.AddRefund(params.SelfdestructRefundGas)
 		}
 		return gas, nil
 	}

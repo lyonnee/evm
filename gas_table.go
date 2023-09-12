@@ -5,6 +5,7 @@ import (
 
 	"github.com/lyonnee/evm/common"
 	"github.com/lyonnee/evm/math"
+	"github.com/lyonnee/evm/params"
 )
 
 // memoryGasCost计算内存扩展的二次气体
@@ -27,8 +28,8 @@ func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error) {
 	// 如果新大小大于当前内存,则计算扩容的 gas 成本
 	if newMemSize > uint64(mem.Len()) {
 		square := newMemSizeWords * newMemSizeWords
-		linCoef := newMemSizeWords * MemoryGas
-		quadCoef := square / QuadCoeffDiv
+		linCoef := newMemSizeWords * params.MemoryGas
+		quadCoef := square / params.QuadCoeffDiv
 		newTotalFee := linCoef + quadCoef
 
 		fee := newTotalFee - mem.lastGasCost
@@ -65,7 +66,7 @@ func memoryCopierGas(stackpos int) gasFunc {
 
 		// 对 words 转换为 wordsize 后乘以 CopyGas 得到拷贝数据的 gas
 		var copyGasValue uint64
-		if copyGasValue, overflow = math.SafeMul(toWordSize(wordsSize), CopyGas); overflow {
+		if copyGasValue, overflow = math.SafeMul(toWordSize(wordsSize), params.CopyGas); overflow {
 			return 0, ErrGasUintOverflow
 		}
 
@@ -102,14 +103,14 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 		switch {
 		case current == common.ZeroHash && y.Sign() != 0:
 			// zero-value -> non-zero value (添加新的值)
-			return SstoreSetGas, nil
+			return params.SstoreSetGas, nil
 		case current != common.ZeroHash && y.Sign() == 0:
 			// non-zero value -> zero-value (删除值)
-			evm.StateDB.AddRefund(SstoreRefundGas)
-			return SstoreClearGas, nil
+			evm.StateDB.AddRefund(params.SstoreRefundGas)
+			return params.SstoreClearGas, nil
 		default:
 			// non-zero value -> non-zero value (修改值)
-			return SstoreResetGas, nil
+			return params.SstoreResetGas, nil
 		}
 	}
 
@@ -118,7 +119,7 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 	value := common.Hash(common.BytesToHash(y.Bytes()))
 	// 如果当前值等于新值（这是无操作），则扣除200gas。
 	if current == value {
-		return NetSstoreNoopGas, nil
+		return params.NetSstoreNoopGas, nil
 	}
 
 	// 如果当前值不等于新值
@@ -129,14 +130,14 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 	if original == current {
 		if original == common.ZeroHash {
 			// 如果原始值为0，则扣除20000gas
-			return NetSstoreInitGas, nil
+			return params.NetSstoreInitGas, nil
 		}
 		if value == common.ZeroHash {
 			// 若新值为0，则退还 15000gas
-			evm.StateDB.AddRefund(NetSstoreClearRefund)
+			evm.StateDB.AddRefund(params.NetSstoreClearRefund)
 		}
 		// 如果原始值不为0，将扣除 5000gas
-		return NetSstoreCleanGas, nil
+		return params.NetSstoreCleanGas, nil
 	}
 
 	// 如果原始值不为0
@@ -144,11 +145,11 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 		if current == common.ZeroHash {
 			// 如果当前值为0（也意味着新值不是0），
 			// 则从退款金额中减去 15000gas
-			evm.StateDB.SubRefund(NetSstoreClearRefund)
+			evm.StateDB.SubRefund(params.NetSstoreClearRefund)
 		} else if value == common.ZeroHash {
 			// 如果新值为0（也意味着当前值不是0），
 			// 则向退款金额添加 15000gas。
-			evm.StateDB.SubRefund(NetSstoreClearRefund)
+			evm.StateDB.SubRefund(params.NetSstoreClearRefund)
 		}
 	}
 
@@ -157,17 +158,17 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 		if original == common.ZeroHash {
 			// 如果原始值为0，
 			// 则反还 19800gas
-			evm.StateDB.AddRefund(NetSstoreResetClearRefund)
+			evm.StateDB.AddRefund(params.NetSstoreResetClearRefund)
 		} else {
 			// 否则，向退款金额添加 4800gas
-			evm.StateDB.AddRefund(NetSstoreResetRefund)
+			evm.StateDB.AddRefund(params.NetSstoreResetRefund)
 		}
 	}
-	return NetSstoreDirtyGas, nil
+	return params.NetSstoreDirtyGas, nil
 }
 
 func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	if contract.Gas <= SstoreSentryGasEIP2200 {
+	if contract.Gas <= params.SstoreSentryGasEIP2200 {
 		// 如果剩余的Gas少于或等于2300，当前调用将失败
 		return 0, errors.New("not enough gas for reentrancy sentry")
 	}
@@ -180,7 +181,7 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 
 	if current == value {
 		// 如果当前值等于新值，不执行任何操作，但会扣除SLOAD_GAS。
-		return SloadGasEIP2200, nil
+		return params.SloadGasEIP2200, nil
 	}
 
 	// 如果当前值不等于新值，会根据不同情况扣除Gas，并可能增加或减少退款
@@ -192,13 +193,13 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	if original == current {
 		if original == common.ZeroHash {
 			// 如果 original 为零，表示创建存储槽，扣除 SSTORE_SET_GAS Gas
-			return SstoreSetGasEIP2200, nil
+			return params.SstoreSetGasEIP2200, nil
 		}
 		if value == common.ZeroHash {
 			// 如果 value 为零，表示删除存储槽，增加 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
-			evm.StateDB.AddRefund(SstoreClearsScheduleRefundEIP2200)
+			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
-		return SstoreResetGasEIP2200, nil
+		return params.SstoreResetGasEIP2200, nil
 	}
 	// 如果 original 不等于 current，表示存储槽被修改过（dirty）
 	// 在这种情况下，扣除 SLOAD_GAS 并根据不同的条件增加或减少退款
@@ -207,24 +208,24 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	if original != common.ZeroHash {
 		if current == common.ZeroHash {
 			// 且 current 为零，表示存储槽从非零值重置为零，扣除 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
-			evm.StateDB.SubRefund(SstoreClearsScheduleRefundEIP2200)
+			evm.StateDB.SubRefund(params.SstoreClearsScheduleRefundEIP2200)
 		} else if value == common.ZeroHash {
 			// 如果 value 为零，表示删除存储槽，增加 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
-			evm.StateDB.AddRefund(SstoreClearsScheduleRefundEIP2200)
+			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
 	}
 	// 如果 original 等于 value，表示存储槽被重置为原始状态
 	if original == value {
 		if original == common.ZeroHash {
 			// 如果 original 为零，表示存储槽从不存在变为存在，增加 SSTORE_SET_GAS - SLOAD_GAS 退款
-			evm.StateDB.AddRefund(SstoreSetGasEIP2200 - SloadGasEIP2200)
+			evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.SloadGasEIP2200)
 		} else {
 			// 否则，表示存储槽从存在变为存在，增加 SSTORE_RESET_GAS - SLOAD_GAS 退款
-			evm.StateDB.AddRefund(SstoreResetGasEIP2200 - SloadGasEIP2200)
+			evm.StateDB.AddRefund(params.SstoreResetGasEIP2200 - params.SloadGasEIP2200)
 		}
 	}
 	// 返回 SLOAD_GAS Gas，表示存储操作完成
-	return SloadGasEIP2200, nil
+	return params.SloadGasEIP2200, nil
 }
 
 // 计算日志（Log）操作的Gas消耗
@@ -241,15 +242,15 @@ func makeGasLog(n uint64) gasFunc {
 			return 0, err
 		}
 
-		if gas, overflow = math.SafeAdd(gas, LogGas); overflow {
+		if gas, overflow = math.SafeAdd(gas, params.LogGas); overflow {
 			return 0, ErrGasUintOverflow
 		}
-		if gas, overflow = math.SafeAdd(gas, n*LogTopicGas); overflow {
+		if gas, overflow = math.SafeAdd(gas, n*params.LogTopicGas); overflow {
 			return 0, ErrGasUintOverflow
 		}
 
 		var memorySizeGas uint64
-		if memorySizeGas, overflow = math.SafeMul(requestedSize, LogDataGas); overflow {
+		if memorySizeGas, overflow = math.SafeMul(requestedSize, params.LogDataGas); overflow {
 			return 0, ErrGasUintOverflow
 		}
 		if gas, overflow = math.SafeAdd(gas, memorySizeGas); overflow {
@@ -269,7 +270,7 @@ func gasKeccak256(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memor
 	if overflow {
 		return 0, ErrGasUintOverflow
 	}
-	if wordGas, overflow = math.SafeMul(toWordSize(wordGas), Keccak256WordGas); overflow {
+	if wordGas, overflow = math.SafeMul(toWordSize(wordGas), params.Keccak256WordGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
 	if gas, overflow = math.SafeAdd(gas, wordGas); overflow {
@@ -301,7 +302,7 @@ func gasCreate2(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memoryS
 	if overflow {
 		return 0, ErrGasUintOverflow
 	}
-	if wordGas, overflow = math.SafeMul(toWordSize(wordGas), Keccak256WordGas); overflow {
+	if wordGas, overflow = math.SafeMul(toWordSize(wordGas), params.Keccak256WordGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
 	if gas, overflow = math.SafeAdd(gas, wordGas); overflow {
@@ -316,11 +317,11 @@ func gasCreateEip3860(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 		return 0, err
 	}
 	size, overflow := stack.Back(2).Uint64WithOverflow()
-	if overflow || size > MaxInitCodeSize {
+	if overflow || size > params.MaxInitCodeSize {
 		return 0, ErrGasUintOverflow
 	}
 	// Since size <= MaxInitCodeSize, these multiplication cannot overflow
-	moreGas := InitCodeWordGas * ((size + 31) / 32)
+	moreGas := params.InitCodeWordGas * ((size + 31) / 32)
 	if gas, overflow = math.SafeAdd(gas, moreGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
@@ -333,11 +334,11 @@ func gasCreate2Eip3860(evm *EVM, contract *Contract, stack *Stack, mem *Memory, 
 		return 0, err
 	}
 	size, overflow := stack.Back(2).Uint64WithOverflow()
-	if overflow || size > MaxInitCodeSize {
+	if overflow || size > params.MaxInitCodeSize {
 		return 0, ErrGasUintOverflow
 	}
 	// Since size <= MaxInitCodeSize, these multiplication cannot overflow
-	moreGas := (InitCodeWordGas + Keccak256WordGas) * ((size + 31) / 32)
+	moreGas := (params.InitCodeWordGas + params.Keccak256WordGas) * ((size + 31) / 32)
 	if gas, overflow = math.SafeAdd(gas, moreGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
@@ -348,10 +349,10 @@ func gasExpFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 	expByteLen := uint64((stack.data[stack.len()-2].BitLen() + 7) / 8)
 
 	var (
-		gas      = expByteLen * ExpByteFrontier // no overflow check required. Max is 256 * ExpByte gas
+		gas      = expByteLen * params.ExpByteFrontier // no overflow check required. Max is 256 * ExpByte gas
 		overflow bool
 	)
-	if gas, overflow = math.SafeAdd(gas, ExpGas); overflow {
+	if gas, overflow = math.SafeAdd(gas, params.ExpGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
 	return gas, nil
@@ -361,10 +362,10 @@ func gasExpEIP158(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memor
 	expByteLen := uint64((stack.data[stack.len()-2].BitLen() + 7) / 8)
 
 	var (
-		gas      = expByteLen * ExpByteEIP158 // no overflow check required. Max is 256 * ExpByte gas
+		gas      = expByteLen * params.ExpByteEIP158 // no overflow check required. Max is 256 * ExpByte gas
 		overflow bool
 	)
-	if gas, overflow = math.SafeAdd(gas, ExpGas); overflow {
+	if gas, overflow = math.SafeAdd(gas, params.ExpGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
 	return gas, nil
@@ -379,13 +380,13 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 
 	if evm.chainRules.IsEIP158 {
 		if transfersValue && evm.StateDB.Empty(address) {
-			gas += CallNewAccountGas
+			gas += params.CallNewAccountGas
 		}
 	} else if !evm.StateDB.Exist(address) {
-		gas += CallNewAccountGas
+		gas += params.CallNewAccountGas
 	}
 	if transfersValue {
-		gas += CallValueTransferGas
+		gas += params.CallValueTransferGas
 	}
 	memoryGas, err := memoryGasCost(mem, memorySize)
 	if err != nil {
@@ -416,7 +417,7 @@ func gasCallCode(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 		overflow bool
 	)
 	if stack.Back(2).Sign() != 0 {
-		gas += CallValueTransferGas
+		gas += params.CallValueTransferGas
 	}
 	if gas, overflow = math.SafeAdd(gas, memoryGas); overflow {
 		return 0, ErrGasUintOverflow
@@ -467,21 +468,21 @@ func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	var gas uint64
 	// EIP150 homestead gas reprice fork:
 	if evm.chainRules.IsEIP150 {
-		gas = SelfdestructGasEIP150
+		gas = params.SelfdestructGasEIP150
 		var address = common.BytesToAddr(stack.Back(0).Bytes())
 
 		if evm.chainRules.IsEIP158 {
 			// if empty and transfers value
 			if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-				gas += CreateBySelfdestructGas
+				gas += params.CreateBySelfdestructGas
 			}
 		} else if !evm.StateDB.Exist(address) {
-			gas += CreateBySelfdestructGas
+			gas += params.CreateBySelfdestructGas
 		}
 	}
 
 	if !evm.StateDB.HasSelfDestructed(contract.Address()) {
-		evm.StateDB.AddRefund(SelfdestructRefundGas)
+		evm.StateDB.AddRefund(params.SelfdestructRefundGas)
 	}
 	return gas, nil
 }

@@ -1,9 +1,25 @@
 package common
 
 import (
-	"github.com/ethereum/go-ethereum/crypto"
+	"hash"
+
+	"golang.org/x/crypto/sha3"
 )
 
-var CreateAddress func(addr Address, nonce uint64) Address = crypto.CreateAddress
+type KeccakState interface {
+	hash.Hash
+	Read([]byte) (int, error)
+}
 
-var CreateAddress2 func(addr Address, salt [32]byte, inithash []byte) Address = crypto.CreateAddress2
+func NewKeccakState() KeccakState {
+	return sha3.NewLegacyKeccak256().(KeccakState)
+}
+
+func Keccak256Hash(data ...[]byte) (h Hash) {
+	d := NewKeccakState()
+	for _, b := range data {
+		d.Write(b)
+	}
+	d.Read(h[:])
+	return h
+}

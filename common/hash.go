@@ -1,17 +1,19 @@
 package common
 
-import (
-	"github.com/ethereum/go-ethereum/common"
-)
+import "github.com/ethereum/go-ethereum/crypto"
 
-type Hash = common.Hash
+type Hash = [32]byte
 
-func BytesToHash(val []byte) common.Hash {
-	return common.Hash(val)
+func BytesToHash(val []byte) Hash {
+	return Hash(val)
 }
 
-func HashToBytes(hash common.Hash) []byte {
+func HashToBytes(hash Hash) []byte {
 	return []byte(hash[:])
 }
 
-var ZeroHash common.Hash = common.Hash{}
+var ZeroHash Hash = Hash{}
+
+var (
+	EmptyCodeHash = crypto.Keccak256Hash(nil) // c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
+)

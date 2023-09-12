@@ -4,10 +4,10 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
 	"github.com/lyonnee/evm/common"
 	"github.com/lyonnee/evm/math"
+	"github.com/lyonnee/evm/params"
 	"github.com/lyonnee/evm/pcontracts"
 )
 
@@ -51,7 +51,7 @@ type codeAndHash struct {
 
 func (c *codeAndHash) Hash() common.Hash {
 	if c.hash == common.ZeroHash {
-		c.hash = crypto.Keccak256Hash(c.code)
+		c.hash = common.Keccak256Hash(c.code)
 	}
 	return c.hash
 }
@@ -111,7 +111,7 @@ func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
 // 调用其他合约
 func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// 检查调用深度,避免无限递归调用。
-	if evm.depth > int(CallCreateDepth) {
+	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
 	// 检查调用者余额,避免转账不足
@@ -185,7 +185,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 }
 
 func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
-	if evm.depth > int(CallCreateDepth) {
+	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
 
@@ -223,7 +223,7 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 }
 
 func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
-	if evm.depth > int(CallCreateDepth) {
+	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
 	var snapshot = evm.StateDB.Snapshot()
@@ -265,7 +265,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 // 但是不允许在调用期间对状态进行任何修改
 // 如果试图执行修改状态的操作码将导致异常
 func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
-	if evm.depth > int(CallCreateDepth) {
+	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
 
@@ -328,7 +328,7 @@ func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *
 }
 
 func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
-	if evm.depth > CALL_CREATE_DEPTH {
+	if evm.depth > params.CALL_CREATE_DEPTH {
 		return nil, common.ZeroAddr, gas, ErrDepth
 	}
 	if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
@@ -344,7 +344,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	contractHash := evm.StateDB.GetCodeHash(address)
-	if evm.StateDB.GetNonce(address) != 0 || (contractHash != common.Hash{} || contractHash != EmptyCodeHash) {
+	if evm.StateDB.GetNonce(address) != 0 || (contractHash != common.Hash{} || contractHash != common.EmptyCodeHash) {
 		return nil, common.ZeroAddr, 0, ErrContractAddressCollision
 	}
 
@@ -370,7 +370,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 
 	ret, err := evm.interpreter.Run(contract, nil, false)
 
-	if err == nil && evm.chainRules.IsEIP158 && uint64(len(ret)) > MaxCodeSize {
+	if err == nil && evm.chainRules.IsEIP158 && uint64(len(ret)) > params.MaxCodeSize {
 		err = ErrMaxCodeSizeExceeded
 	}
 
@@ -382,7 +382,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// 如果合约创建成功并且没有返回错误，计算存储代码所需的gas。
 	//如果由于没有足够的气体而无法存储代码，则设置一个错误，并让下面的错误检查条件处理它。
 	if err == nil {
-		createDataGas := uint64(len(ret)) * CreateDataGas
+		createDataGas := uint64(len(ret)) * params.CreateDataGas
 		if contract.UseGas(createDataGas) {
 			evm.StateDB.SetCode(address, ret)
 		} else {
