@@ -433,7 +433,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainId uin
 		TxContext:  txCtx,
 		StateDB:    statedb,
 		Config:     config,
-		chainRules: common.NewRules(blockCtx.BlockNumber),
+		chainRules: common.NewRules(),
 	}
 	evm.interpreter = NewEVMInterpreter(evm)
 	return evm
