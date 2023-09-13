@@ -968,3 +968,10 @@ func opPush0(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]by
 	scope.Stack.push(new(uint256.Int))
 	return nil, nil
 }
+
+// opChainID implements CHAINID opcode
+func opChainID(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+	chainId, _ := uint256.FromBig(interpreter.evm.chainRules.ChainID)
+	scope.Stack.push(chainId)
+	return nil, nil
+}

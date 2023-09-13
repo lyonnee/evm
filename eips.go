@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/holiman/uint256"
 	"github.com/lyonnee/evm/params"
 )
 
@@ -77,13 +76,6 @@ func enable1344(jt *JumpTable) {
 		minStack:    minStack(0, 1),
 		maxStack:    maxStack(0, 1),
 	}
-}
-
-// opChainID implements CHAINID opcode
-func opChainID(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-	chainId, _ := uint256.FromBig(interpreter.evm.chainRules.ChainID)
-	scope.Stack.push(chainId)
-	return nil, nil
 }
 
 // enable2200 applies EIP-2200 (Rebalance net-metered SSTORE)
