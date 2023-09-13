@@ -2,10 +2,22 @@ package common
 
 import "github.com/ethereum/go-ethereum/crypto"
 
-type Hash = [32]byte
+const HashLength int = 32
 
-func BytesToHash(val []byte) Hash {
-	return Hash(val)
+type Hash [HashLength]byte
+
+func (h *Hash) SetBytes(b []byte) {
+	if len(b) > len(h) {
+		b = b[len(b)-HashLength:]
+	}
+
+	copy(h[HashLength-len(b):], b)
+}
+
+func BytesToHash(b []byte) Hash {
+	var h Hash
+	h.SetBytes(b)
+	return h
 }
 
 func HashToBytes(hash Hash) []byte {
@@ -15,5 +27,5 @@ func HashToBytes(hash Hash) []byte {
 var ZeroHash Hash = Hash{}
 
 var (
-	EmptyCodeHash = crypto.Keccak256Hash(nil) // c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
+	EmptyCodeHash = [32]byte(crypto.Keccak256Hash(nil)) // c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
 )

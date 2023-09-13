@@ -12,13 +12,13 @@ type Rules struct {
 }
 
 // Rules ensures c's ChainID is not nil.
-func NewRules(chainId *big.Int) Rules {
-	chainID := chainId
-	if chainID == nil {
-		chainID = new(big.Int)
-	}
+func NewRules() Rules {
+	// chainID := chainId
+	// if chainID == nil {
+	// 	chainID = new(big.Int)
+	// }
 	return Rules{
-		ChainID:          new(big.Int).Set(chainID),
+		ChainID:          new(big.Int).SetInt64(1),
 		IsHomestead:      true,
 		IsEIP150:         true,
 		IsEIP155:         true,
