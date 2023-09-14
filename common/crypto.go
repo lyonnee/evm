@@ -3,7 +3,7 @@ package common
 import (
 	"hash"
 
-	"golang.org/x/crypto/sha3"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type KeccakState interface {
@@ -11,8 +11,10 @@ type KeccakState interface {
 	Read([]byte) (int, error)
 }
 
+// TODO: 可自定义Keccak算法
+
 func NewKeccakState() KeccakState {
-	return sha3.NewLegacyKeccak256().(KeccakState)
+	return crypto.NewKeccakState()
 }
 
 func Keccak256Hash(data ...[]byte) (h Hash) {

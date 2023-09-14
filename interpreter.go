@@ -1,8 +1,6 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/lyonnee/evm/common"
 	"github.com/lyonnee/evm/math"
 )
@@ -28,7 +26,7 @@ type EVMInterpreter struct {
 	evm   *EVM
 	table *JumpTable
 
-	hasher    crypto.KeccakState // Keccak256 hasher instance shared across opcodes
+	hasher    common.KeccakState // Keccak256 hasher instance shared across opcodes
 	hasherBuf common.Hash        // Keccak256 hasher result array shared aross opcodes
 
 	readOnly   bool   // Whether to throw on stateful modifications
@@ -73,7 +71,7 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 	for _, eip := range evm.Config.ExtraEips {
 		if err := EnableEIP(eip, table); err != nil {
 			// Disable it, so caller can check if it's activated or not
-			log.Error("EIP activation failed", "eip", eip, "error", err)
+			// log.Error("EIP activation failed", "eip", eip, "error", err)
 		} else {
 			extraEips = append(extraEips, eip)
 		}

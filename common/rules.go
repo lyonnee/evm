@@ -36,3 +36,12 @@ func NewRules() Rules {
 		IsVerkle:         false,
 	}
 }
+
+type Options struct {
+	ChainId                                                 *big.Int
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
+	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
+	IsBerlin, IsLondon                                      bool
+	IsMerge, IsShanghai, IsCancun, IsPrague                 bool
+	IsVerkle                                                bool
+}

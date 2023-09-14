@@ -1,7 +1,6 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
 	"github.com/lyonnee/evm/common"
 	"github.com/lyonnee/evm/math"
@@ -220,7 +219,7 @@ func opKeccak256(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) (
 
 	// 如果解释器的hasher为空,则新建一个keccak256哈希状态机,否则重置现有的hasher
 	if interpreter.hasher == nil {
-		interpreter.hasher = crypto.NewKeccakState()
+		interpreter.hasher = common.NewKeccakState()
 	} else {
 		interpreter.hasher.Reset()
 	}
@@ -332,7 +331,7 @@ func opReturnDataCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeConte
 
 func opExtCodeSize(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	slot := scope.Stack.peek()
-	slot.SetUint64(uint64(interpreter.evm.StateDB.GetCodeSize(slot.Bytes32())))
+	slot.SetUint64(uint64(interpreter.evm.StateDB.GetCodeSize(common.BytesToAddr(slot.Bytes()))))
 	return nil, nil
 }
 
@@ -799,7 +798,7 @@ func opSelfdestruct(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext
 	interpreter.evm.StateDB.AddBalance(common.BytesToAddr(beneficiary.Bytes()), balance)
 	interpreter.evm.StateDB.SelfDestruct(scope.Contract.Address())
 	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
-		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), beneficiary.Bytes32(), []byte{}, 0, balance)
+		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), common.BytesToAddr(beneficiary.Bytes()), []byte{}, 0, balance)
 		tracer.CaptureExit([]byte{}, 0, nil)
 	}
 	return nil, errStopToken
@@ -823,7 +822,7 @@ func opSelfdestruct6780(pc *uint64, interpreter *EVMInterpreter, scope *ScopeCon
 	interpreter.evm.StateDB.AddBalance(common.BytesToAddr(beneficiary.Bytes()), balance)
 	interpreter.evm.StateDB.Selfdestruct6780(scope.Contract.Address())
 	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
-		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), beneficiary.Bytes32(), []byte{}, 0, balance)
+		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), common.BytesToAddr(beneficiary.Bytes()), []byte{}, 0, balance)
 		tracer.CaptureExit([]byte{}, 0, nil)
 	}
 	return nil, errStopToken
@@ -923,7 +922,7 @@ func opBlobHash(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
 	index := scope.Stack.peek()
 	if index.LtUint64(uint64(len(interpreter.evm.TxContext.BlobHashes))) {
 		blobHash := interpreter.evm.TxContext.BlobHashes[index.Uint64()]
-		index.SetBytes32(blobHash[:])
+		index.SetBytes(blobHash[:])
 	} else {
 		index.Clear()
 	}
@@ -939,7 +938,7 @@ func opSelfBalance(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
 // opTload implements TLOAD opcode
 func opTload(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	loc := scope.Stack.peek()
-	hash := common.Hash(loc.Bytes32())
+	hash := common.BytesToHash(loc.Bytes())
 	val := interpreter.evm.StateDB.GetTransientState(scope.Contract.Address(), hash)
 	loc.SetBytes(val[:])
 	return nil, nil
@@ -952,7 +951,7 @@ func opTstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
 	}
 	loc := scope.Stack.pop()
 	val := scope.Stack.pop()
-	interpreter.evm.StateDB.SetTransientState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
+	interpreter.evm.StateDB.SetTransientState(scope.Contract.Address(), common.BytesToHash(loc.Bytes()), common.BytesToHash(val.Bytes()))
 	return nil, nil
 }
 

@@ -39,23 +39,23 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 		}
 		original := evm.StateDB.GetCommittedState(contract.Address(), common.BytesToHash(x.Bytes()))
 		if original == current {
-			if original == common.ZeroHash {
+			if original == common.NilHash {
 				return cost + params.SstoreSetGasEIP2200, nil
 			}
-			if value == common.ZeroHash {
+			if value == common.NilHash {
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 			return cost + (params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929), nil
 		}
-		if original != common.ZeroHash {
-			if current == common.ZeroHash {
+		if original != common.NilHash {
+			if current == common.NilHash {
 				evm.StateDB.SubRefund(clearingRefund)
-			} else if value == common.ZeroHash {
+			} else if value == common.NilHash {
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 		}
 		if original == value {
-			if original == common.ZeroHash {
+			if original == common.NilHash {
 				evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.WarmStorageReadCostEIP2929)
 			} else {
 				evm.StateDB.AddRefund((params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929) - params.WarmStorageReadCostEIP2929)

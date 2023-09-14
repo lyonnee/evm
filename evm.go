@@ -50,7 +50,7 @@ type codeAndHash struct {
 }
 
 func (c *codeAndHash) Hash() common.Hash {
-	if c.hash == common.ZeroHash {
+	if c.hash == common.NilHash {
 		c.hash = common.Keccak256Hash(c.code)
 	}
 	return c.hash
@@ -329,14 +329,14 @@ func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *
 
 func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
 	if evm.depth > params.CALL_CREATE_DEPTH {
-		return nil, common.ZeroAddr, gas, ErrDepth
+		return nil, common.NilAddr, gas, ErrDepth
 	}
 	if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
-		return nil, common.ZeroAddr, gas, ErrInsufficientBalance
+		return nil, common.NilAddr, gas, ErrInsufficientBalance
 	}
 	nonce := evm.StateDB.GetNonce(caller.Address())
 	if nonce+1 < nonce {
-		return nil, common.ZeroAddr, gas, ErrNonceUintOverflow
+		return nil, common.NilAddr, gas, ErrNonceUintOverflow
 	}
 	evm.StateDB.SetNonce(caller.Address(), nonce+1)
 	if evm.chainRules.IsBerlin {
@@ -345,7 +345,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 
 	contractHash := evm.StateDB.GetCodeHash(address)
 	if evm.StateDB.GetNonce(address) != 0 || (contractHash != common.Hash{} || contractHash != common.EmptyCodeHash) {
-		return nil, common.ZeroAddr, 0, ErrContractAddressCollision
+		return nil, common.NilAddr, 0, ErrContractAddressCollision
 	}
 
 	snapshot := evm.StateDB.Snapshot()

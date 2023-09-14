@@ -101,10 +101,10 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 
 	if evm.chainRules.IsPetersburg || !evm.chainRules.IsConstantinople {
 		switch {
-		case current == common.ZeroHash && y.Sign() != 0:
+		case current == common.NilHash && y.Sign() != 0:
 			// zero-value -> non-zero value (添加新的值)
 			return params.SstoreSetGas, nil
-		case current != common.ZeroHash && y.Sign() == 0:
+		case current != common.NilHash && y.Sign() == 0:
 			// non-zero value -> zero-value (删除值)
 			evm.StateDB.AddRefund(params.SstoreRefundGas)
 			return params.SstoreClearGas, nil
@@ -128,11 +128,11 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 	original := evm.StateDB.GetCommittedState(contract.Address(), common.BytesToHash(x.Bytes()))
 	// 如果原始值等于当前值（当前执行上下文未更改此存储槽）
 	if original == current {
-		if original == common.ZeroHash {
+		if original == common.NilHash {
 			// 如果原始值为0，则扣除20000gas
 			return params.NetSstoreInitGas, nil
 		}
-		if value == common.ZeroHash {
+		if value == common.NilHash {
 			// 若新值为0，则退还 15000gas
 			evm.StateDB.AddRefund(params.NetSstoreClearRefund)
 		}
@@ -141,12 +141,12 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 	}
 
 	// 如果原始值不为0
-	if original != common.ZeroHash {
-		if current == common.ZeroHash {
+	if original != common.NilHash {
+		if current == common.NilHash {
 			// 如果当前值为0（也意味着新值不是0），
 			// 则从退款金额中减去 15000gas
 			evm.StateDB.SubRefund(params.NetSstoreClearRefund)
-		} else if value == common.ZeroHash {
+		} else if value == common.NilHash {
 			// 如果新值为0（也意味着当前值不是0），
 			// 则向退款金额添加 15000gas。
 			evm.StateDB.SubRefund(params.NetSstoreClearRefund)
@@ -155,7 +155,7 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 
 	// 如果原始值等于新值（此存储插槽重置）
 	if original == value {
-		if original == common.ZeroHash {
+		if original == common.NilHash {
 			// 如果原始值为0，
 			// 则反还 19800gas
 			evm.StateDB.AddRefund(params.NetSstoreResetClearRefund)
@@ -191,11 +191,11 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	// 如果 original 等于 current，表示当前存储槽没有被当前执行上下文修改过
 	// 在这种情况下，根据不同的条件扣除Gas，并可能增加或减少退款。
 	if original == current {
-		if original == common.ZeroHash {
+		if original == common.NilHash {
 			// 如果 original 为零，表示创建存储槽，扣除 SSTORE_SET_GAS Gas
 			return params.SstoreSetGasEIP2200, nil
 		}
-		if value == common.ZeroHash {
+		if value == common.NilHash {
 			// 如果 value 为零，表示删除存储槽，增加 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
 			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
@@ -205,18 +205,18 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	// 在这种情况下，扣除 SLOAD_GAS 并根据不同的条件增加或减少退款
 
 	// 如果 original 不为零
-	if original != common.ZeroHash {
-		if current == common.ZeroHash {
+	if original != common.NilHash {
+		if current == common.NilHash {
 			// 且 current 为零，表示存储槽从非零值重置为零，扣除 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
 			evm.StateDB.SubRefund(params.SstoreClearsScheduleRefundEIP2200)
-		} else if value == common.ZeroHash {
+		} else if value == common.NilHash {
 			// 如果 value 为零，表示删除存储槽，增加 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
 			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
 	}
 	// 如果 original 等于 value，表示存储槽被重置为原始状态
 	if original == value {
-		if original == common.ZeroHash {
+		if original == common.NilHash {
 			// 如果 original 为零，表示存储槽从不存在变为存在，增加 SSTORE_SET_GAS - SLOAD_GAS 退款
 			evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.SloadGasEIP2200)
 		} else {

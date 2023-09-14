@@ -78,8 +78,3 @@ type CallContext interface {
 	// Create creates a new contract
 	Create(env *EVM, me ContractRef, data []byte, gas, value *big.Int) ([]byte, common.Address, error)
 }
-
-type Cryptoer interface {
-	CreateAddress(b common.Address, nonce uint64) common.Address
-	CreateAddress2(b common.Address, salt [32]byte, inithash []byte) common.Address
-}
