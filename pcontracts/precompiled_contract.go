@@ -1,7 +1,6 @@
 package pcontracts
 
 import (
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/lyonnee/evm/common"
 )
 
@@ -89,6 +88,30 @@ var PrecompiledContractsBLS = map[common.Address]PrecompiledContract{
 	common.BytesToAddr([]byte{18}): &bls12381MapG2{},
 }
 
+var AllPrecompiles = map[common.Address]PrecompiledContract{
+	common.BytesToAddr([]byte{1}):    &ecrecover{},
+	common.BytesToAddr([]byte{2}):    &sha256hash{},
+	common.BytesToAddr([]byte{3}):    &ripemd160hash{},
+	common.BytesToAddr([]byte{4}):    &dataCopy{},
+	common.BytesToAddr([]byte{5}):    &bigModExp{eip2565: false},
+	common.BytesToAddr([]byte{0xf5}): &bigModExp{eip2565: true},
+	common.BytesToAddr([]byte{6}):    &bn256AddIstanbul{},
+	common.BytesToAddr([]byte{7}):    &bn256ScalarMulIstanbul{},
+	common.BytesToAddr([]byte{8}):    &bn256PairingIstanbul{},
+	common.BytesToAddr([]byte{9}):    &blake2F{},
+	common.BytesToAddr([]byte{0x0a}): &kzgPointEvaluation{},
+
+	common.BytesToAddr([]byte{0x0f, 0x0a}): &bls12381G1Add{},
+	common.BytesToAddr([]byte{0x0f, 0x0b}): &bls12381G1Mul{},
+	common.BytesToAddr([]byte{0x0f, 0x0c}): &bls12381G1MultiExp{},
+	common.BytesToAddr([]byte{0x0f, 0x0d}): &bls12381G2Add{},
+	common.BytesToAddr([]byte{0x0f, 0x0e}): &bls12381G2Mul{},
+	common.BytesToAddr([]byte{0x0f, 0x0f}): &bls12381G2MultiExp{},
+	common.BytesToAddr([]byte{0x0f, 0x10}): &bls12381Pairing{},
+	common.BytesToAddr([]byte{0x0f, 0x11}): &bls12381MapG1{},
+	common.BytesToAddr([]byte{0x0f, 0x12}): &bls12381MapG2{},
+}
+
 var (
 	PrecompiledAddressesCancun    []common.Address
 	PrecompiledAddressesBerlin    []common.Address
@@ -116,7 +139,7 @@ func init() {
 }
 
 // ActivePrecompiles returns the precompiles enabled with the current configuration.
-func ActivePrecompiles(rules params.Rules) []common.Address {
+func ActivePrecompiles(rules common.Rules) []common.Address {
 	switch {
 	case rules.IsCancun:
 		return PrecompiledAddressesCancun

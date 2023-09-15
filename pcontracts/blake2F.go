@@ -25,17 +25,17 @@ const (
 )
 
 var (
-	errBlake2FInvalidInputLength = errors.New("invalid input length")
-	errBlake2FInvalidFinalFlag   = errors.New("invalid final flag")
+	ErrBlake2FInvalidInputLength = errors.New("invalid input length")
+	ErrBlake2FInvalidFinalFlag   = errors.New("invalid final flag")
 )
 
 func (c *blake2F) Run(input []byte) ([]byte, error) {
 	// Make sure the input is valid (correct length and final flag)
 	if len(input) != blake2FInputLength {
-		return nil, errBlake2FInvalidInputLength
+		return nil, ErrBlake2FInvalidInputLength
 	}
 	if input[212] != blake2FNonFinalBlockBytes && input[212] != blake2FFinalBlockBytes {
-		return nil, errBlake2FInvalidFinalFlag
+		return nil, ErrBlake2FInvalidFinalFlag
 	}
 	// Parse the input into the Blake2b call parameters
 	var (

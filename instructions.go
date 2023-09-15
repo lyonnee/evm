@@ -56,8 +56,8 @@ func opExp(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte
 }
 
 func opSignExtend(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-	x, y := scope.Stack.pop(), scope.Stack.peek()
-	y.ExtendSign(&x, y)
+	back, num := scope.Stack.pop(), scope.Stack.peek()
+	num.ExtendSign(num, &back)
 	return nil, nil
 }
 
@@ -203,7 +203,7 @@ func opSAR(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte
 		if val.Sign() >= 0 {
 			val.Clear()
 		} else {
-			val.SetOne()
+			val.SetAllOne()
 		}
 		return nil, nil
 	}

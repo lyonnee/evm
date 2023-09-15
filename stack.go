@@ -10,7 +10,7 @@ import (
 var stackPool = sync.Pool{
 	New: func() any {
 		return &Stack{
-			data: make([]uint256.Int, 16),
+			data: make([]uint256.Int, 0, 16),
 		}
 	},
 }

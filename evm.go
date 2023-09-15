@@ -427,7 +427,7 @@ func (evm *EVM) precompile(addr common.Address) (pcontracts.PrecompiledContract,
 	return p, ok
 }
 
-func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainId uint64, config Config) *EVM {
+func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, config Config) *EVM {
 	evm := &EVM{
 		Context:    blockCtx,
 		TxContext:  txCtx,
