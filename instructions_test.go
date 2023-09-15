@@ -33,6 +33,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
 	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/params"
 )
 
 type TwoOperandTestcase struct {
@@ -123,7 +124,7 @@ func has0xPrefix(str string) bool {
 	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }
 
-var testChainConfig = &common.ChainConfig{
+var testChainConfig = &params.ChainConfig{
 	ChainID:             big.NewInt(1),
 	HomesteadBlock:      big.NewInt(0),
 	DAOForkBlock:        nil,

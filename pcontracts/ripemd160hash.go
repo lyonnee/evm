@@ -1,8 +1,7 @@
 package pcontracts
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/lyonnee/evm/params"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -18,5 +17,5 @@ func (c *ripemd160hash) RequiredGas(input []byte) uint64 {
 func (c *ripemd160hash) Run(input []byte) ([]byte, error) {
 	ripemd := ripemd160.New()
 	ripemd.Write(input)
-	return common.LeftPadBytes(ripemd.Sum(nil), 32), nil
+	return LeftPadBytes(ripemd.Sum(nil), 32), nil
 }

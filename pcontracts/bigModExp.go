@@ -3,7 +3,6 @@ package pcontracts
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/lyonnee/evm/math"
 )
 
@@ -107,14 +106,14 @@ func (c *bigModExp) Run(input []byte) ([]byte, error) {
 	switch {
 	case mod.BitLen() == 0:
 		// Modulo 0 is undefined, return zero
-		return common.LeftPadBytes([]byte{}, int(modLen)), nil
+		return LeftPadBytes([]byte{}, int(modLen)), nil
 	case base.BitLen() == 1: // a bit length of 1 means it's 1 (or -1).
 		//If base == 1, then we can just return base % mod (if mod >= 1, which it is)
 		v = base.Mod(base, mod).Bytes()
 	default:
 		v = base.Exp(base, exp, mod).Bytes()
 	}
-	return common.LeftPadBytes(v, int(modLen)), nil
+	return LeftPadBytes(v, int(modLen)), nil
 }
 
 func modexpMultComplexity(x *big.Int) *big.Int {
@@ -135,4 +134,26 @@ func modexpMultComplexity(x *big.Int) *big.Int {
 		)
 	}
 	return x
+}
+
+func LeftPadBytes(slice []byte, l int) []byte {
+	if l <= len(slice) {
+		return slice
+	}
+
+	padded := make([]byte, l)
+	copy(padded[l-len(slice):], slice)
+
+	return padded
+}
+
+func RightPadBytes(slice []byte, l int) []byte {
+	if l <= len(slice) {
+		return slice
+	}
+
+	padded := make([]byte, l)
+	copy(padded, slice)
+
+	return padded
 }

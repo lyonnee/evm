@@ -2,6 +2,7 @@ package pcontracts
 
 import (
 	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/params"
 )
 
 type PrecompiledContract interface {
@@ -139,7 +140,7 @@ func init() {
 }
 
 // ActivePrecompiles returns the precompiles enabled with the current configuration.
-func ActivePrecompiles(rules common.Rules) []common.Address {
+func ActivePrecompiles(rules params.Rules) []common.Address {
 	switch {
 	case rules.IsCancun:
 		return PrecompiledAddressesCancun

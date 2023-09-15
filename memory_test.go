@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -80,13 +79,13 @@ func TestMemoryCopy(t *testing.T) {
 	} {
 		m := NewMemory()
 		// Clean spaces
-		data := common.FromHex(strings.ReplaceAll(tc.pre, " ", ""))
+		data := FromHex(strings.ReplaceAll(tc.pre, " ", ""))
 		// Set pre
 		m.Resize(uint64(len(data)))
 		m.Set(0, uint64(len(data)), data)
 		// Do the copy
 		m.Copy(tc.dst, tc.src, tc.len)
-		want := common.FromHex(strings.ReplaceAll(tc.want, " ", ""))
+		want := FromHex(strings.ReplaceAll(tc.want, " ", ""))
 		if have := m.store; !bytes.Equal(want, have) {
 			t.Errorf("case %d: want: %#x\nhave: %#x\n", i, want, have)
 		}

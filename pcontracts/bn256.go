@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	bn256 "github.com/ethereum/go-ethereum/crypto/bn256/cloudflare"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/lyonnee/evm/params"
 )
 
 type bn256ScalarMulByzantium struct{}

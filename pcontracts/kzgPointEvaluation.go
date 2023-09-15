@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/lyonnee/evm/params"
 )
 
 // kzgPointEvaluation implements the EIP-4844 point evaluation precompile.

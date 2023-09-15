@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/params"
 )
 
 var loopInterruptTests = []string{
@@ -139,7 +140,7 @@ func (s StateDBImpl) Snapshot() int {
 	return s.db.Snapshot()
 }
 
-var allEthashProtocolChanges = &common.ChainConfig{
+var allEthashProtocolChanges = &params.ChainConfig{
 	ChainID:             big.NewInt(1337),
 	HomesteadBlock:      big.NewInt(0),
 	DAOForkBlock:        nil,

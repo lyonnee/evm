@@ -3,7 +3,7 @@ package pcontracts
 import (
 	"crypto/sha256"
 
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/lyonnee/evm/params"
 )
 
 type sha256hash struct{}

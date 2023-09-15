@@ -65,7 +65,7 @@ type EVM struct {
 	// Depth is the current call stack
 	depth int
 	// chain rules contains the chain rules for the current epoch
-	chainRules common.Rules
+	chainRules params.Rules
 	// virtual machine configuration options used to initialise the
 	// evm.
 	Config Config
@@ -427,7 +427,7 @@ func (evm *EVM) precompile(addr common.Address) (pcontracts.PrecompiledContract,
 	return p, ok
 }
 
-func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig *common.ChainConfig, config Config) *EVM {
+func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig *params.ChainConfig, config Config) *EVM {
 	evm := &EVM{
 		Context:    blockCtx,
 		TxContext:  txCtx,
