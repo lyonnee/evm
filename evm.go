@@ -344,7 +344,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	contractHash := evm.StateDB.GetCodeHash(address)
-	if evm.StateDB.GetNonce(address) != 0 || (contractHash != common.Hash{} || contractHash != common.EmptyCodeHash) {
+	if evm.StateDB.GetNonce(address) != 0 || (contractHash != common.NilHash && contractHash != common.EmptyCodeHash) {
 		return nil, common.NilAddr, 0, ErrContractAddressCollision
 	}
 
@@ -427,13 +427,13 @@ func (evm *EVM) precompile(addr common.Address) (pcontracts.PrecompiledContract,
 	return p, ok
 }
 
-func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, config Config) *EVM {
+func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig *common.ChainConfig, config Config) *EVM {
 	evm := &EVM{
 		Context:    blockCtx,
 		TxContext:  txCtx,
 		StateDB:    statedb,
 		Config:     config,
-		chainRules: common.NewRules(),
+		chainRules: chainConfig.Rules(blockCtx.BlockNumber, blockCtx.Random != nil, blockCtx.Time),
 	}
 	evm.interpreter = NewEVMInterpreter(evm)
 	return evm

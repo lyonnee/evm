@@ -23,11 +23,11 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/lyonnee/evm/common"
 )
 
 func TestMemoryGasCost(t *testing.T) {
@@ -81,21 +81,21 @@ var eip2200Tests = []struct {
 
 func TestEIP2200(t *testing.T) {
 	for i, tt := range eip2200Tests {
-		address := common.BytesToAddress([]byte("contract"))
+		address := common.BytesToAddr([]byte("contract"))
 
 		statedb, _ := state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 		statedb.CreateAccount(address)
 		statedb.SetCode(address, hexutil.MustDecode(tt.input))
-		statedb.SetState(address, common.Hash{}, common.BytesToHash([]byte{tt.original}))
+		statedb.SetState(address, common.NilHash, common.BytesToHash([]byte{tt.original}))
 		statedb.Finalise(true) // Push the state into the "original" slot
 
 		vmctx := BlockContext{
 			CanTransfer: func(StateDB, common.Address, *big.Int) bool { return true },
 			Transfer:    func(StateDB, common.Address, common.Address, *big.Int) {},
 		}
-		vmenv := NewEVM(vmctx, TxContext{}, &StateDBImpl{db: statedb}, Config{ExtraEips: []int{2200}})
+		vmenv := NewEVM(vmctx, TxContext{}, &StateDBImpl{db: statedb}, allEthashProtocolChanges, Config{ExtraEips: []int{2200}})
 
-		_, gas, err := vmenv.Call(AccountRef(common.Address{}), address, nil, tt.gaspool, new(big.Int))
+		_, gas, err := vmenv.Call(AccountRef(common.NilAddr), address, nil, tt.gaspool, new(big.Int))
 		if err != tt.failure {
 			t.Errorf("test %d: failure mismatch: have %v, want %v", i, err, tt.failure)
 		}
@@ -134,7 +134,7 @@ func TestCreateGas(t *testing.T) {
 	for i, tt := range createGasTests {
 		var gasUsed = uint64(0)
 		doCheck := func(testGas int) bool {
-			address := common.BytesToAddress([]byte("contract"))
+			address := common.BytesToAddr([]byte("contract"))
 			statedb, _ := state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 			statedb.CreateAccount(address)
 			statedb.SetCode(address, hexutil.MustDecode(tt.code))
@@ -149,9 +149,9 @@ func TestCreateGas(t *testing.T) {
 				config.ExtraEips = []int{3860}
 			}
 
-			vmenv := NewEVM(vmctx, TxContext{}, &StateDBImpl{db: statedb}, config)
+			vmenv := NewEVM(vmctx, TxContext{}, &StateDBImpl{db: statedb}, allEthashProtocolChanges, config)
 			var startGas = uint64(testGas)
-			ret, gas, err := vmenv.Call(AccountRef(common.Address{}), address, nil, startGas, new(big.Int))
+			ret, gas, err := vmenv.Call(AccountRef(common.NilAddr), address, nil, startGas, new(big.Int))
 			if err != nil {
 				return false
 			}

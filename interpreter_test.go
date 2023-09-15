@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/lyonnee/evm/common"
 )
 
 var loopInterruptTests = []string{
@@ -139,8 +139,32 @@ func (s StateDBImpl) Snapshot() int {
 	return s.db.Snapshot()
 }
 
+var allEthashProtocolChanges = &common.ChainConfig{
+	ChainID:             big.NewInt(1337),
+	HomesteadBlock:      big.NewInt(0),
+	DAOForkBlock:        nil,
+	DAOForkSupport:      false,
+	EIP150Block:         big.NewInt(0),
+	EIP155Block:         big.NewInt(0),
+	EIP158Block:         big.NewInt(0),
+	ByzantiumBlock:      big.NewInt(0),
+	ConstantinopleBlock: big.NewInt(0),
+	PetersburgBlock:     big.NewInt(0),
+	IstanbulBlock:       big.NewInt(0),
+	MuirGlacierBlock:    big.NewInt(0),
+	BerlinBlock:         big.NewInt(0),
+	LondonBlock:         big.NewInt(0),
+	ArrowGlacierBlock:   big.NewInt(0),
+	GrayGlacierBlock:    big.NewInt(0),
+	MergeNetsplitBlock:  nil,
+	ShanghaiTime:        nil,
+	CancunTime:          nil,
+	PragueTime:          nil,
+	VerkleTime:          nil,
+}
+
 func TestLoopInterrupt(t *testing.T) {
-	address := common.BytesToAddress([]byte("contract"))
+	address := common.BytesToAddr([]byte("contract"))
 	vmctx := BlockContext{
 		Transfer: func(StateDB, common.Address, common.Address, *big.Int) {},
 	}
@@ -148,16 +172,16 @@ func TestLoopInterrupt(t *testing.T) {
 	for i, tt := range loopInterruptTests {
 		statedb, _ := state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 		statedb.CreateAccount(address)
-		statedb.SetCode(address, common.Hex2Bytes(tt))
+		statedb.SetCode(address, Hex2Bytes(tt))
 		statedb.Finalise(true)
 
-		evm := NewEVM(vmctx, TxContext{}, &StateDBImpl{db: statedb}, Config{})
+		evm := NewEVM(vmctx, TxContext{}, &StateDBImpl{db: statedb}, allEthashProtocolChanges, Config{})
 
 		errChannel := make(chan error)
 		timeout := make(chan bool)
 
 		go func(evm *EVM) {
-			_, _, err := evm.Call(AccountRef(common.Address{}), address, nil, math.MaxUint64, new(big.Int))
+			_, _, err := evm.Call(AccountRef(common.NilAddr), address, nil, math.MaxUint64, new(big.Int))
 			errChannel <- err
 		}(evm)
 

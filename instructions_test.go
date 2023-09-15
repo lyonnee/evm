@@ -122,9 +122,34 @@ func FromHex(s string) []byte {
 func has0xPrefix(str string) bool {
 	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }
+
+var testChainConfig = &common.ChainConfig{
+	ChainID:             big.NewInt(1),
+	HomesteadBlock:      big.NewInt(0),
+	DAOForkBlock:        nil,
+	DAOForkSupport:      false,
+	EIP150Block:         big.NewInt(0),
+	EIP155Block:         big.NewInt(0),
+	EIP158Block:         big.NewInt(0),
+	ByzantiumBlock:      big.NewInt(0),
+	ConstantinopleBlock: big.NewInt(0),
+	PetersburgBlock:     big.NewInt(0),
+	IstanbulBlock:       big.NewInt(0),
+	MuirGlacierBlock:    big.NewInt(0),
+	BerlinBlock:         big.NewInt(0),
+	LondonBlock:         big.NewInt(0),
+	ArrowGlacierBlock:   big.NewInt(0),
+	GrayGlacierBlock:    big.NewInt(0),
+	MergeNetsplitBlock:  nil,
+	ShanghaiTime:        nil,
+	CancunTime:          nil,
+	PragueTime:          nil,
+	VerkleTime:          nil,
+}
+
 func testTwoOperandOp(t *testing.T, tests []TwoOperandTestcase, opFn executionFunc, name string) {
 	var (
-		env            = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+		env            = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 		stack          = newstack()
 		pc             = uint64(0)
 		evmInterpreter = env.interpreter
@@ -223,7 +248,7 @@ func TestSAR(t *testing.T) {
 
 func TestAddMod(t *testing.T) {
 	var (
-		env            = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+		env            = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 		stack          = newstack()
 		evmInterpreter = NewEVMInterpreter(env)
 		pc             = uint64(0)
@@ -267,7 +292,7 @@ func TestWriteExpectedValues(t *testing.T) {
 	// getResult is a convenience function to generate the expected values
 	getResult := func(args []*twoOperandParams, opFn executionFunc) []TwoOperandTestcase {
 		var (
-			env         = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+			env         = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 			stack       = newstack()
 			pc          = uint64(0)
 			interpreter = env.interpreter
@@ -312,7 +337,7 @@ func TestJsonTestcases(t *testing.T) {
 
 func opBenchmark(bench *testing.B, op executionFunc, args ...string) {
 	var (
-		env            = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+		env            = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 		stack          = newstack()
 		scope          = &ScopeContext{nil, stack, nil}
 		evmInterpreter = NewEVMInterpreter(env)
@@ -553,7 +578,7 @@ func BenchmarkOpIsZero(b *testing.B) {
 
 func TestOpMstore(t *testing.T) {
 	var (
-		env            = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+		env            = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 		stack          = newstack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env)
@@ -579,7 +604,7 @@ func TestOpMstore(t *testing.T) {
 
 func BenchmarkOpMstore(bench *testing.B) {
 	var (
-		env            = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+		env            = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 		stack          = newstack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env)
@@ -602,7 +627,7 @@ func BenchmarkOpMstore(bench *testing.B) {
 func TestOpTstore(t *testing.T) {
 	var (
 		statedb, _     = state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
-		env            = NewEVM(BlockContext{}, TxContext{}, &StateDBImpl{db: statedb}, Config{})
+		env            = NewEVM(BlockContext{}, TxContext{}, &StateDBImpl{db: statedb}, testChainConfig, Config{})
 		stack          = newstack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env)
@@ -644,7 +669,7 @@ func TestOpTstore(t *testing.T) {
 
 func BenchmarkOpKeccak256(bench *testing.B) {
 	var (
-		env            = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+		env            = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 		stack          = newstack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env)
@@ -742,13 +767,13 @@ func TestRandom(t *testing.T) {
 	}
 
 	for _, tt := range []testcase{
-		{name: "empty hash", random: common.Hash{}},
+		{name: "empty hash", random: common.NilHash},
 		{name: "1", random: common.Hash{0}},
 		{name: "emptyCodeHash", random: types.EmptyCodeHash},
 		{name: "hash(0x010203)", random: crypto.Keccak256Hash([]byte{0x01, 0x02, 0x03})},
 	} {
 		var (
-			env            = NewEVM(BlockContext{Random: &tt.random}, TxContext{}, nil, Config{})
+			env            = NewEVM(BlockContext{Random: &tt.random}, TxContext{}, nil, testChainConfig, Config{})
 			stack          = newstack()
 			pc             = uint64(0)
 			evmInterpreter = env.interpreter
@@ -789,7 +814,7 @@ func TestBlobHash(t *testing.T) {
 		{name: "out-of-bounds (nil)", idx: 25, expect: zero, hashes: nil},
 	} {
 		var (
-			env            = NewEVM(BlockContext{}, TxContext{BlobHashes: tt.hashes}, nil, Config{})
+			env            = NewEVM(BlockContext{}, TxContext{BlobHashes: tt.hashes}, nil, testChainConfig, Config{})
 			stack          = newstack()
 			pc             = uint64(0)
 			evmInterpreter = env.interpreter
@@ -892,7 +917,7 @@ func TestOpMCopy(t *testing.T) {
 		},
 	} {
 		var (
-			env            = NewEVM(BlockContext{}, TxContext{}, nil, Config{})
+			env            = NewEVM(BlockContext{}, TxContext{}, nil, testChainConfig, Config{})
 			stack          = newstack()
 			pc             = uint64(0)
 			evmInterpreter = env.interpreter
