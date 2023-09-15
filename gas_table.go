@@ -57,25 +57,20 @@ func memoryCopierGas(stackpos int) gasFunc {
 			return 0, err
 		}
 
-		var overflow bool = false
-		// 获取要拷贝的数据大小 words
-		var wordsSize uint64
-		if wordsSize, overflow = stack.Back(stackpos).Uint64WithOverflow(); overflow {
+		// And gas for copying data, charged per word at param.CopyGas
+		words, overflow := stack.Back(stackpos).Uint64WithOverflow()
+		if overflow {
 			return 0, ErrGasUintOverflow
 		}
 
-		// 对 words 转换为 wordsize 后乘以 CopyGas 得到拷贝数据的 gas
-		var copyGasValue uint64
-		if copyGasValue, overflow = math.SafeMul(toWordSize(wordsSize), params.CopyGas); overflow {
+		if words, overflow = math.SafeMul(toWordSize(words), params.CopyGas); overflow {
 			return 0, ErrGasUintOverflow
 		}
 
-		// 总 gas 为内存扩容 gas + 拷贝 gas
-		var totalGas uint64
-		if totalGas, overflow = math.SafeAdd(gas, copyGasValue); overflow {
+		if gas, overflow = math.SafeAdd(gas, words); overflow {
 			return 0, ErrGasUintOverflow
 		}
-		return totalGas, nil
+		return gas, nil
 	}
 }
 

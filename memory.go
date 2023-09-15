@@ -27,7 +27,7 @@ func (m *Memory) Set32(offset uint64, val *uint256.Int) {
 		panic("invalid memory: store empty")
 	}
 	b32 := val.Bytes32()
-	copy(m.store[offset:offset], b32[:])
+	copy(m.store[offset:], b32[:])
 }
 
 func (m *Memory) Resize(size uint64) {

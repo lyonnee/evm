@@ -69,5 +69,5 @@ func (s *Stack) peek() *uint256.Int {
 
 // 返回但不删除指定位置的值
 func (s *Stack) Back(n int) *uint256.Int {
-	return &s.data[s.len()-1]
+	return &s.data[s.len()-n-1]
 }
