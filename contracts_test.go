@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/lyonnee/evm/common"
-	"github.com/lyonnee/evm/pcontracts"
 )
 
 // precompiledTest defines the input/output pairs for precompiled contract tests.
@@ -44,28 +43,26 @@ type precompiledFailureTest struct {
 	Name          string
 }
 
-var allPrecompiles = pcontracts.AllPrecompiles
-
 // EIP-152 test vectors
 var blake2FMalformedInputTests = []precompiledFailureTest{
 	{
 		Input:         "",
-		ExpectedError: pcontracts.ErrBlake2FInvalidInputLength.Error(),
+		ExpectedError: errBlake2FInvalidInputLength.Error(),
 		Name:          "vector 0: empty input",
 	},
 	{
 		Input:         "00000c48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001",
-		ExpectedError: pcontracts.ErrBlake2FInvalidInputLength.Error(),
+		ExpectedError: errBlake2FInvalidInputLength.Error(),
 		Name:          "vector 1: less than 213 bytes input",
 	},
 	{
 		Input:         "000000000c48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001",
-		ExpectedError: pcontracts.ErrBlake2FInvalidInputLength.Error(),
+		ExpectedError: errBlake2FInvalidInputLength.Error(),
 		Name:          "vector 2: more than 213 bytes input",
 	},
 	{
 		Input:         "0000000c48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000002",
-		ExpectedError: pcontracts.ErrBlake2FInvalidFinalFlag.Error(),
+		ExpectedError: errBlake2FInvalidFinalFlag.Error(),
 		Name:          "vector 3: malformed final block indicator flag",
 	},
 }
@@ -73,7 +70,7 @@ var blake2FMalformedInputTests = []precompiledFailureTest{
 func HexToAddress(s string) common.Address { return common.BytesToAddr(FromHex(s)) }
 
 func testPrecompiled(addr string, test precompiledTest, t *testing.T) {
-	p := pcontracts.AllPrecompiles[HexToAddress(addr)]
+	p := allPrecompiles[HexToAddress(addr)]
 	in := Hex2Bytes(test.Input)
 	gas := p.RequiredGas(in)
 	t.Run(fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {

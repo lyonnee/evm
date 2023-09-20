@@ -24,7 +24,6 @@ import (
 	"github.com/lyonnee/evm/common"
 	"github.com/lyonnee/evm/math"
 	"github.com/lyonnee/evm/params"
-	"github.com/lyonnee/evm/pcontracts"
 )
 
 type (
@@ -425,19 +424,19 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	return ret, address, contract.Gas, err
 }
 
-func (evm *EVM) precompile(addr common.Address) (pcontracts.PrecompiledContract, bool) {
-	var precompiles map[common.Address]pcontracts.PrecompiledContract
+func (evm *EVM) precompile(addr common.Address) (PrecompiledContract, bool) {
+	var precompiles map[common.Address]PrecompiledContract
 	switch {
 	case evm.chainRules.IsCancun:
-		precompiles = pcontracts.PrecompiledContractsCancun
+		precompiles = PrecompiledContractsCancun
 	case evm.chainRules.IsBerlin:
-		precompiles = pcontracts.PrecompiledContractsBerlin
+		precompiles = PrecompiledContractsBerlin
 	case evm.chainRules.IsIstanbul:
-		precompiles = pcontracts.PrecompiledContractsIstanbul
+		precompiles = PrecompiledContractsIstanbul
 	case evm.chainRules.IsByzantium:
-		precompiles = pcontracts.PrecompiledContractsByzantium
+		precompiles = PrecompiledContractsByzantium
 	default:
-		precompiles = pcontracts.PrecompiledContractsHomestead
+		precompiles = PrecompiledContractsHomestead
 	}
 	p, ok := precompiles[addr]
 	return p, ok
