@@ -19,7 +19,7 @@ package evm
 import (
 	"errors"
 
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/math"
 	"github.com/lyonnee/evm/params"
 )
@@ -112,10 +112,10 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 
 	if evm.chainRules.IsPetersburg || !evm.chainRules.IsConstantinople {
 		switch {
-		case current == common.NilHash && y.Sign() != 0:
+		case current == define.NilHash && y.Sign() != 0:
 			// zero-value -> non-zero value (添加新的值)
 			return params.SstoreSetGas, nil
-		case current != common.NilHash && y.Sign() == 0:
+		case current != define.NilHash && y.Sign() == 0:
 			// non-zero value -> zero-value (删除值)
 			evm.StateDB.AddRefund(params.SstoreRefundGas)
 			return params.SstoreClearGas, nil
@@ -127,7 +127,7 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 
 	//新的gas计量基于net gas净成本（EIP-1283）
 
-	value := common.Hash(common.BytesToHash(y.Bytes()))
+	value := define.Hash(define.BytesToHash(y.Bytes()))
 	// 如果当前值等于新值（这是无操作），则扣除200gas。
 	if current == value {
 		return params.NetSstoreNoopGas, nil
@@ -136,14 +136,14 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 	// 如果当前值不等于新值
 
 	// 原始值已提交的稳定状态数据
-	original := evm.StateDB.GetCommittedState(contract.Address(), common.BytesToHash(x.Bytes()))
+	original := evm.StateDB.GetCommittedState(contract.Address(), define.BytesToHash(x.Bytes()))
 	// 如果原始值等于当前值（当前执行上下文未更改此存储槽）
 	if original == current {
-		if original == common.NilHash {
+		if original == define.NilHash {
 			// 如果原始值为0，则扣除20000gas
 			return params.NetSstoreInitGas, nil
 		}
-		if value == common.NilHash {
+		if value == define.NilHash {
 			// 若新值为0，则退还 15000gas
 			evm.StateDB.AddRefund(params.NetSstoreClearRefund)
 		}
@@ -152,12 +152,12 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 	}
 
 	// 如果原始值不为0
-	if original != common.NilHash {
-		if current == common.NilHash {
+	if original != define.NilHash {
+		if current == define.NilHash {
 			// 如果当前值为0（也意味着新值不是0），
 			// 则从退款金额中减去 15000gas
 			evm.StateDB.SubRefund(params.NetSstoreClearRefund)
-		} else if value == common.NilHash {
+		} else if value == define.NilHash {
 			// 如果新值为0（也意味着当前值不是0），
 			// 则向退款金额添加 15000gas。
 			evm.StateDB.SubRefund(params.NetSstoreClearRefund)
@@ -166,7 +166,7 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 
 	// 如果原始值等于新值（此存储插槽重置）
 	if original == value {
-		if original == common.NilHash {
+		if original == define.NilHash {
 			// 如果原始值为0，
 			// 则反还 19800gas
 			evm.StateDB.AddRefund(params.NetSstoreResetClearRefund)
@@ -188,7 +188,7 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 		x, y    = stack.Back(0), stack.Back(1)
 		current = evm.StateDB.GetState(contract.Address(), x.Bytes32())
 	)
-	value := common.Hash(common.BytesToHash(y.Bytes()))
+	value := define.Hash(define.BytesToHash(y.Bytes()))
 
 	if current == value {
 		// 如果当前值等于新值，不执行任何操作，但会扣除SLOAD_GAS。
@@ -198,15 +198,15 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	// 如果当前值不等于新值，会根据不同情况扣除Gas，并可能增加或减少退款
 
 	// 原始存储槽的值
-	original := evm.StateDB.GetCommittedState(contract.Address(), common.BytesToHash(x.Bytes()))
+	original := evm.StateDB.GetCommittedState(contract.Address(), define.BytesToHash(x.Bytes()))
 	// 如果 original 等于 current，表示当前存储槽没有被当前执行上下文修改过
 	// 在这种情况下，根据不同的条件扣除Gas，并可能增加或减少退款。
 	if original == current {
-		if original == common.NilHash {
+		if original == define.NilHash {
 			// 如果 original 为零，表示创建存储槽，扣除 SSTORE_SET_GAS Gas
 			return params.SstoreSetGasEIP2200, nil
 		}
-		if value == common.NilHash {
+		if value == define.NilHash {
 			// 如果 value 为零，表示删除存储槽，增加 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
 			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
@@ -216,18 +216,18 @@ func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	// 在这种情况下，扣除 SLOAD_GAS 并根据不同的条件增加或减少退款
 
 	// 如果 original 不为零
-	if original != common.NilHash {
-		if current == common.NilHash {
+	if original != define.NilHash {
+		if current == define.NilHash {
 			// 且 current 为零，表示存储槽从非零值重置为零，扣除 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
 			evm.StateDB.SubRefund(params.SstoreClearsScheduleRefundEIP2200)
-		} else if value == common.NilHash {
+		} else if value == define.NilHash {
 			// 如果 value 为零，表示删除存储槽，增加 SSTORE_CLEAR_SCHEDULE_REFUND_EIP2200 退款
 			evm.StateDB.AddRefund(params.SstoreClearsScheduleRefundEIP2200)
 		}
 	}
 	// 如果 original 等于 value，表示存储槽被重置为原始状态
 	if original == value {
-		if original == common.NilHash {
+		if original == define.NilHash {
 			// 如果 original 为零，表示存储槽从不存在变为存在，增加 SSTORE_SET_GAS - SLOAD_GAS 退款
 			evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.SloadGasEIP2200)
 		} else {
@@ -386,7 +386,7 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 	var (
 		gas            uint64
 		transfersValue = !stack.Back(2).IsZero()
-		address        = common.BytesToAddr(stack.Back(1).Bytes())
+		address        = define.BytesToAddr(stack.Back(1).Bytes())
 	)
 
 	if evm.chainRules.IsEIP158 {
@@ -480,7 +480,7 @@ func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	// EIP150 homestead gas reprice fork:
 	if evm.chainRules.IsEIP150 {
 		gas = params.SelfdestructGasEIP150
-		var address = common.BytesToAddr(stack.Back(0).Bytes())
+		var address = define.BytesToAddr(stack.Back(0).Bytes())
 
 		if evm.chainRules.IsEIP158 {
 			// if empty and transfers value

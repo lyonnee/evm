@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/params"
 )
 
@@ -41,37 +41,37 @@ type StateDBImpl struct {
 	db *state.StateDB
 }
 
-func (s StateDBImpl) CreateAccount(a common.Address) {
+func (s StateDBImpl) CreateAccount(a define.Address) {
 	s.db.CreateAccount(a)
 }
 
-func (s StateDBImpl) SubBalance(a common.Address, b *big.Int) {
+func (s StateDBImpl) SubBalance(a define.Address, b *big.Int) {
 	s.db.SubBalance(a, b)
 }
-func (s StateDBImpl) AddBalance(a common.Address, b *big.Int) {
+func (s StateDBImpl) AddBalance(a define.Address, b *big.Int) {
 	s.db.AddBalance(a, b)
 }
-func (s StateDBImpl) GetBalance(a common.Address) *big.Int {
+func (s StateDBImpl) GetBalance(a define.Address) *big.Int {
 	return s.db.GetBalance(a)
 }
 
-func (s StateDBImpl) GetNonce(a common.Address) uint64 {
+func (s StateDBImpl) GetNonce(a define.Address) uint64 {
 	return s.db.GetNonce(a)
 }
-func (s StateDBImpl) SetNonce(a common.Address, n uint64) {
+func (s StateDBImpl) SetNonce(a define.Address, n uint64) {
 	s.db.SetNonce(a, n)
 }
 
-func (s StateDBImpl) GetCodeHash(a common.Address) common.Hash {
+func (s StateDBImpl) GetCodeHash(a define.Address) define.Hash {
 	return s.db.GetCodeHash(a)
 }
-func (s StateDBImpl) GetCode(a common.Address) []byte {
+func (s StateDBImpl) GetCode(a define.Address) []byte {
 	return s.db.GetCode(a)
 }
-func (s StateDBImpl) SetCode(a common.Address, b []byte) {
+func (s StateDBImpl) SetCode(a define.Address, b []byte) {
 	s.db.SetCode(a, b)
 }
-func (s StateDBImpl) GetCodeSize(a common.Address) int {
+func (s StateDBImpl) GetCodeSize(a define.Address) int {
 	return s.db.GetCodeSize(a)
 }
 
@@ -85,50 +85,50 @@ func (s StateDBImpl) GetRefund() uint64 {
 	return s.db.GetRefund()
 }
 
-func (s StateDBImpl) GetCommittedState(a common.Address, k common.Hash) common.Hash {
+func (s StateDBImpl) GetCommittedState(a define.Address, k define.Hash) define.Hash {
 	return s.db.GetCommittedState(a, k)
 }
-func (s StateDBImpl) GetState(a common.Address, k common.Hash) common.Hash {
+func (s StateDBImpl) GetState(a define.Address, k define.Hash) define.Hash {
 	return s.db.GetState(a, k)
 }
-func (s StateDBImpl) SetState(a common.Address, k common.Hash, v common.Hash) {
+func (s StateDBImpl) SetState(a define.Address, k define.Hash, v define.Hash) {
 	s.db.SetState(a, k, v)
 }
 
-func (s StateDBImpl) GetTransientState(addr common.Address, key common.Hash) common.Hash {
+func (s StateDBImpl) GetTransientState(addr define.Address, key define.Hash) define.Hash {
 	return s.db.GetTransientState(addr, key)
 }
-func (s StateDBImpl) SetTransientState(addr common.Address, key, val common.Hash) {
+func (s StateDBImpl) SetTransientState(addr define.Address, key, val define.Hash) {
 	s.db.SetTransientState(addr, key, val)
 }
 
-func (s StateDBImpl) SelfDestruct(a common.Address) {
+func (s StateDBImpl) SelfDestruct(a define.Address) {
 	s.db.SelfDestruct(a)
 }
-func (s StateDBImpl) HasSelfDestructed(a common.Address) bool {
+func (s StateDBImpl) HasSelfDestructed(a define.Address) bool {
 	return s.db.HasSelfDestructed(a)
 }
-func (s StateDBImpl) Selfdestruct6780(a common.Address) {
+func (s StateDBImpl) Selfdestruct6780(a define.Address) {
 	s.db.Selfdestruct6780(a)
 }
 
-func (s StateDBImpl) Exist(a common.Address) bool {
+func (s StateDBImpl) Exist(a define.Address) bool {
 	return s.db.Exist(a)
 }
-func (s StateDBImpl) Empty(a common.Address) bool {
+func (s StateDBImpl) Empty(a define.Address) bool {
 	return s.db.Empty(a)
 }
 
-func (s StateDBImpl) AddressInAccessList(addr common.Address) bool {
+func (s StateDBImpl) AddressInAccessList(addr define.Address) bool {
 	return s.db.AddressInAccessList(addr)
 }
-func (s StateDBImpl) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk bool, slotOk bool) {
+func (s StateDBImpl) SlotInAccessList(addr define.Address, slot define.Hash) (addressOk bool, slotOk bool) {
 	return s.db.SlotInAccessList(addr, slot)
 }
-func (s StateDBImpl) AddAddressToAccessList(addr common.Address) {
+func (s StateDBImpl) AddAddressToAccessList(addr define.Address) {
 	s.db.AddAddressToAccessList(addr)
 }
-func (s StateDBImpl) AddSlotToAccessList(addr common.Address, slot common.Hash) {
+func (s StateDBImpl) AddSlotToAccessList(addr define.Address, slot define.Hash) {
 	s.db.AddSlotToAccessList(addr, slot)
 }
 
@@ -165,9 +165,9 @@ var allEthashProtocolChanges = &params.ChainConfig{
 }
 
 func TestLoopInterrupt(t *testing.T) {
-	address := common.BytesToAddr([]byte("contract"))
+	address := define.BytesToAddr([]byte("contract"))
 	vmctx := BlockContext{
-		Transfer: func(StateDB, common.Address, common.Address, *big.Int) {},
+		Transfer: func(StateDB, define.Address, define.Address, *big.Int) {},
 	}
 
 	for i, tt := range loopInterruptTests {
@@ -182,7 +182,7 @@ func TestLoopInterrupt(t *testing.T) {
 		timeout := make(chan bool)
 
 		go func(evm *EVM) {
-			_, _, err := evm.Call(AccountRef(common.NilAddr), address, nil, math.MaxUint64, new(big.Int))
+			_, _, err := evm.Call(AccountRef(define.NilAddr), address, nil, math.MaxUint64, new(big.Int))
 			errChannel <- err
 		}(evm)
 

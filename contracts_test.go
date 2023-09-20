@@ -23,8 +23,6 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"github.com/lyonnee/evm/common"
 )
 
 // precompiledTest defines the input/output pairs for precompiled contract tests.
@@ -66,8 +64,6 @@ var blake2FMalformedInputTests = []precompiledFailureTest{
 		Name:          "vector 3: malformed final block indicator flag",
 	},
 }
-
-func HexToAddress(s string) common.Address { return common.BytesToAddr(FromHex(s)) }
 
 func testPrecompiled(addr string, test precompiledTest, t *testing.T) {
 	p := allPrecompiles[HexToAddress(addr)]

@@ -17,9 +17,11 @@
 package evm
 
 import (
+	"encoding/hex"
 	"math"
 
 	"github.com/holiman/uint256"
+	"github.com/lyonnee/evm/define"
 )
 
 // calcMemSize64 calculates the required memory size, and returns
@@ -91,4 +93,28 @@ func rightPadBytes(slice []byte, l int) []byte {
 	copy(padded, slice)
 
 	return padded
+}
+
+// Hex2Bytes returns the bytes represented by the hexadecimal string str.
+func Hex2Bytes(str string) []byte {
+	h, _ := hex.DecodeString(str)
+	return h
+}
+
+func HexToAddress(s string) define.Address { return define.BytesToAddr(FromHex(s)) }
+
+func Bytes2Hex(d []byte) string {
+	return hex.EncodeToString(d)
+}
+func FromHex(s string) []byte {
+	if has0xPrefix(s) {
+		s = s[2:]
+	}
+	if len(s)%2 == 1 {
+		s = "0" + s
+	}
+	return Hex2Bytes(s)
+}
+func has0xPrefix(str string) bool {
+	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }

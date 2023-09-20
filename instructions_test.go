@@ -18,7 +18,6 @@ package evm
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -32,7 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/params"
 )
 
@@ -52,15 +51,15 @@ var commonParams []*twoOperandParams
 var twoOpMethods map[string]executionFunc
 
 type contractRef struct {
-	addr common.Address
+	addr define.Address
 }
 
-func (c contractRef) Address() common.Address {
+func (c contractRef) Address() define.Address {
 	return c.addr
 }
 
 func init() {
-	// Params is a list of common edgecases that should be used for some common tests
+	// Params is a list of define edgecases that should be used for some define tests
 	params := []string{
 		"0000000000000000000000000000000000000000000000000000000000000000", // 0
 		"0000000000000000000000000000000000000000000000000000000000000001", // +1
@@ -102,22 +101,6 @@ func init() {
 		"shr":     opSHR,
 		"sar":     opSAR,
 	}
-}
-
-func Bytes2Hex(d []byte) string {
-	return hex.EncodeToString(d)
-}
-func FromHex(s string) []byte {
-	if has0xPrefix(s) {
-		s = s[2:]
-	}
-	if len(s)%2 == 1 {
-		s = "0" + s
-	}
-	return Hex2Bytes(s)
-}
-func has0xPrefix(str string) bool {
-	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }
 
 var testChainConfig = &params.ChainConfig{
@@ -628,8 +611,8 @@ func TestOpTstore(t *testing.T) {
 		stack          = newstack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env)
-		caller         = common.Address{}
-		to             = common.Address{1}
+		caller         = define.Address{}
+		to             = define.Address{1}
 		contractRef    = contractRef{caller}
 		contract       = NewContract(contractRef, AccountRef(to), new(big.Int), 0)
 		scopeContext   = ScopeContext{mem, stack, contract}
@@ -736,8 +719,8 @@ func TestCreate2Addreses(t *testing.T) {
 			expected: "0xE33C0C7F7df4809055C3ebA6c09CFe4BaF1BD9e0",
 		},
 	} {
-		origin := common.BytesToAddr(FromHex(tt.origin))
-		salt := common.BytesToHash(FromHex(tt.salt))
+		origin := define.BytesToAddr(FromHex(tt.origin))
+		salt := define.BytesToHash(FromHex(tt.salt))
 		code := FromHex(tt.code)
 		codeHash := crypto.Keccak256(code)
 		address := crypto.CreateAddress2(origin, salt, codeHash)
@@ -750,7 +733,7 @@ func TestCreate2Addreses(t *testing.T) {
 			gas, _ := gasCreate2(params.GasTable{}, nil, nil, stack, nil, 0)
 			fmt.Printf("Example %d\n* address `0x%x`\n* salt `0x%x`\n* init_code `0x%x`\n* gas (assuming no mem expansion): `%v`\n* result: `%s`\n\n", i,origin, salt, code, gas, address.String())
 		*/
-		expected := common.BytesToAddr(FromHex(tt.expected))
+		expected := define.BytesToAddr(FromHex(tt.expected))
 		if !bytes.Equal(expected.Bytes(), address.Bytes()) {
 			t.Errorf("test %d: expected %s, got %s", i, expected.String(), address.String())
 		}
@@ -760,12 +743,12 @@ func TestCreate2Addreses(t *testing.T) {
 func TestRandom(t *testing.T) {
 	type testcase struct {
 		name   string
-		random common.Hash
+		random define.Hash
 	}
 
 	for _, tt := range []testcase{
-		{name: "empty hash", random: common.NilHash},
-		{name: "1", random: common.Hash{0}},
+		{name: "empty hash", random: define.NilHash},
+		{name: "1", random: define.Hash{0}},
 		{name: "emptyCodeHash", random: types.EmptyCodeHash},
 		{name: "hash(0x010203)", random: crypto.Keccak256Hash([]byte{0x01, 0x02, 0x03})},
 	} {
@@ -794,20 +777,20 @@ func TestBlobHash(t *testing.T) {
 	type testcase struct {
 		name   string
 		idx    uint64
-		expect common.Hash
-		hashes []common.Hash
+		expect define.Hash
+		hashes []define.Hash
 	}
 	var (
-		zero  = common.Hash{0}
-		one   = common.Hash{1}
-		two   = common.Hash{2}
-		three = common.Hash{3}
+		zero  = define.Hash{0}
+		one   = define.Hash{1}
+		two   = define.Hash{2}
+		three = define.Hash{3}
 	)
 	for _, tt := range []testcase{
-		{name: "[{1}]", idx: 0, expect: one, hashes: []common.Hash{one}},
-		{name: "[1,{2},3]", idx: 2, expect: three, hashes: []common.Hash{one, two, three}},
-		{name: "out-of-bounds (empty)", idx: 10, expect: zero, hashes: []common.Hash{}},
-		{name: "out-of-bounds", idx: 25, expect: zero, hashes: []common.Hash{one, two, three}},
+		{name: "[{1}]", idx: 0, expect: one, hashes: []define.Hash{one}},
+		{name: "[1,{2},3]", idx: 2, expect: three, hashes: []define.Hash{one, two, three}},
+		{name: "out-of-bounds (empty)", idx: 10, expect: zero, hashes: []define.Hash{}},
+		{name: "out-of-bounds", idx: 25, expect: zero, hashes: []define.Hash{one, two, three}},
 		{name: "out-of-bounds (nil)", idx: 25, expect: zero, hashes: nil},
 	} {
 		var (

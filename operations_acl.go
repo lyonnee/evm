@@ -19,7 +19,7 @@ package evm
 import (
 	"errors"
 
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/math"
 	"github.com/lyonnee/evm/params"
 )
@@ -32,7 +32,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 
 		var (
 			x, y    = stack.peek(), stack.Back(1)
-			slot    = common.BytesToHash(x.Bytes())
+			slot    = define.BytesToHash(x.Bytes())
 			current = evm.StateDB.GetState(contract.Address(), slot)
 			cost    = uint64(0)
 		)
@@ -45,33 +45,33 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 				// Once we're done with YOLOv2 and schedule this for mainnet, might
 				// be good to remove this panic here, which is just really a
 				// canary to have during testing
-				panic("impossible case: common.Address was not present in access list during sstore op")
+				panic("impossible case: define.Address was not present in access list during sstore op")
 			}
 		}
-		value := common.BytesToHash(y.Bytes())
+		value := define.BytesToHash(y.Bytes())
 
 		if current == value {
 			return cost + params.WarmStorageReadCostEIP2929, nil
 		}
-		original := evm.StateDB.GetCommittedState(contract.Address(), common.BytesToHash(x.Bytes()))
+		original := evm.StateDB.GetCommittedState(contract.Address(), define.BytesToHash(x.Bytes()))
 		if original == current {
-			if original == common.NilHash {
+			if original == define.NilHash {
 				return cost + params.SstoreSetGasEIP2200, nil
 			}
-			if value == common.NilHash {
+			if value == define.NilHash {
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 			return cost + (params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929), nil
 		}
-		if original != common.NilHash {
-			if current == common.NilHash {
+		if original != define.NilHash {
+			if current == define.NilHash {
 				evm.StateDB.SubRefund(clearingRefund)
-			} else if value == common.NilHash {
+			} else if value == define.NilHash {
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 		}
 		if original == value {
-			if original == common.NilHash {
+			if original == define.NilHash {
 				evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.WarmStorageReadCostEIP2929)
 			} else {
 				evm.StateDB.AddRefund((params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929) - params.WarmStorageReadCostEIP2929)
@@ -83,7 +83,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 
 func gasSLoadEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	loc := stack.peek()
-	slot := common.BytesToHash(loc.Bytes())
+	slot := define.BytesToHash(loc.Bytes())
 
 	if _, slotPresent := evm.StateDB.SlotInAccessList(contract.Address(), slot); !slotPresent {
 		evm.StateDB.AddSlotToAccessList(contract.Address(), slot)
@@ -98,7 +98,7 @@ func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 	if err != nil {
 		return 0, err
 	}
-	addr := common.BytesToAddr(stack.peek().Bytes())
+	addr := define.BytesToAddr(stack.peek().Bytes())
 	// Check slot presence in the access list
 	if !evm.StateDB.AddressInAccessList(addr) {
 		evm.StateDB.AddAddressToAccessList(addr)
@@ -113,7 +113,7 @@ func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 }
 
 func gasEip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	addr := common.BytesToAddr(stack.peek().Bytes())
+	addr := define.BytesToAddr(stack.peek().Bytes())
 	// Check slot presence in the access list
 	if !evm.StateDB.AddressInAccessList(addr) {
 		// If the caller cannot afford the cost, this change will be rolled back
@@ -126,7 +126,7 @@ func gasEip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 
 func makeCallVariantGasCallEIP2929(oldCalculator gasFunc) gasFunc {
 	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-		addr := common.BytesToAddr(stack.peek().Bytes())
+		addr := define.BytesToAddr(stack.peek().Bytes())
 		// Check slot presence in the access list
 		warmAccess := evm.StateDB.AddressInAccessList(addr)
 		// The WarmStorageReadCostEIP2929 (100) is already deducted in the form of a constant cost, so
@@ -169,7 +169,7 @@ var (
 
 	// gasSStoreEIP2929 implements gas cost for SSTORE according to EIP-2929
 	//
-	// When calling SSTORE, check if the (common.Address, storage_key) pair is in accessed_storage_keys.
+	// When calling SSTORE, check if the (define.Address, storage_key) pair is in accessed_storage_keys.
 	// If it is not, charge an additional COLD_SLOAD_COST gas, and add the pair to accessed_storage_keys.
 	// Additionally, modify the parameters defined in EIP 2200 as follows:
 	//
@@ -190,7 +190,7 @@ func makeSelfdestructGasFn(refundsEnabled bool) gasFunc {
 	gasFunc := func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 		var (
 			gas     uint64
-			address = common.BytesToAddr(stack.peek().Bytes())
+			address = define.BytesToAddr(stack.peek().Bytes())
 		)
 		if !evm.StateDB.AddressInAccessList(address) {
 			// If the caller cannot afford the cost, this change will be rolled back

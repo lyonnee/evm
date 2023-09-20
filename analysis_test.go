@@ -20,7 +20,7 @@ import (
 	"math/bits"
 	"testing"
 
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 )
 
 func TestJumpDestAnalysis(t *testing.T) {
@@ -77,7 +77,7 @@ func BenchmarkJumpdestHashing_1200k(bench *testing.B) {
 	bench.SetBytes(analysisCodeSize)
 	bench.ResetTimer()
 	for i := 0; i < bench.N; i++ {
-		common.Keccak256Hash(code)
+		define.Keccak256Hash(code)
 	}
 	bench.StopTimer()
 }

@@ -18,7 +18,7 @@ package evm
 
 import (
 	"github.com/holiman/uint256"
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/math"
 	"github.com/lyonnee/evm/params"
 )
@@ -235,7 +235,7 @@ func opKeccak256(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) (
 
 	// 如果解释器的hasher为空,则新建一个keccak256哈希状态机,否则重置现有的hasher
 	if interpreter.hasher == nil {
-		interpreter.hasher = common.NewKeccakState()
+		interpreter.hasher = define.NewKeccakState()
 	} else {
 		interpreter.hasher.Reset()
 	}
@@ -247,7 +247,7 @@ func opKeccak256(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) (
 
 	// 如果配置了preimage记录,则将原数据和哈希结果添加到状态数据库的preimage映射中
 	if interpreter.evm.Config.EnablePreimageRecording {
-		interpreter.evm.StateDB.AddPreimage(common.BytesToHash(data), interpreter.hasherBuf[:])
+		interpreter.evm.StateDB.AddPreimage(define.BytesToHash(data), interpreter.hasherBuf[:])
 	}
 
 	// 更新Stack顶部数据
@@ -257,26 +257,26 @@ func opKeccak256(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) (
 
 // 将当前合约地址压入Stack顶部
 func opAddress(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.push(new(uint256.Int).SetBytes(common.AddrToBytes(scope.Contract.Address())))
+	scope.Stack.push(new(uint256.Int).SetBytes(define.AddrToBytes(scope.Contract.Address())))
 	return nil, nil
 }
 
 func opBalance(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	// 从Stack顶取出要查询的地址
 	slot := scope.Stack.peek()
-	address := common.BytesToAddr(slot.Bytes())
+	address := define.BytesToAddr(slot.Bytes())
 	// 从evm实例的statedb中查询余额,并写回Stack顶部
 	slot.SetFromBig(interpreter.evm.StateDB.GetBalance(address))
 	return nil, nil
 }
 
 func opOrigin(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.push(new(uint256.Int).SetBytes(common.AddrToBytes(interpreter.evm.Origin)))
+	scope.Stack.push(new(uint256.Int).SetBytes(define.AddrToBytes(interpreter.evm.Origin)))
 	return nil, nil
 }
 
 func opCaller(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.push(new(uint256.Int).SetBytes(common.AddrToBytes(scope.Contract.Caller())))
+	scope.Stack.push(new(uint256.Int).SetBytes(define.AddrToBytes(scope.Contract.Caller())))
 	return nil, nil
 }
 
@@ -347,7 +347,7 @@ func opReturnDataCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeConte
 
 func opExtCodeSize(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	slot := scope.Stack.peek()
-	slot.SetUint64(uint64(interpreter.evm.StateDB.GetCodeSize(common.BytesToAddr(slot.Bytes()))))
+	slot.SetUint64(uint64(interpreter.evm.StateDB.GetCodeSize(define.BytesToAddr(slot.Bytes()))))
 	return nil, nil
 }
 
@@ -382,7 +382,7 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
 	if overflow {
 		uint64CodeOffset = 0xffffffffffffffff
 	}
-	addr := common.BytesToAddr(a.Bytes())
+	addr := define.BytesToAddr(a.Bytes())
 	codeCopy := getData(interpreter.evm.StateDB.GetCode(addr), uint64CodeOffset, length.Uint64())
 	scope.Memory.Set(memOffset.Uint64(), length.Uint64(), codeCopy)
 	return nil, nil
@@ -397,11 +397,11 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
 // 对已删除的账户,视为不存在账户,返回0
 func opExtCodeHash(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	slot := scope.Stack.peek()
-	address := common.BytesToAddr(slot.Bytes())
+	address := define.BytesToAddr(slot.Bytes())
 	if interpreter.evm.StateDB.Empty(address) {
 		slot.Clear()
 	} else {
-		slot.SetBytes(common.HashToBytes(interpreter.evm.StateDB.GetCodeHash(address)))
+		slot.SetBytes(define.HashToBytes(interpreter.evm.StateDB.GetCodeHash(address)))
 	}
 	return nil, nil
 }
@@ -436,7 +436,7 @@ func opBlockhash(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) (
 }
 
 func opCoinbase(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
-	scope.Stack.push(new(uint256.Int).SetBytes(common.AddrToBytes(interpreter.evm.Context.Coinbase)))
+	scope.Stack.push(new(uint256.Int).SetBytes(define.AddrToBytes(interpreter.evm.Context.Coinbase)))
 	return nil, nil
 }
 
@@ -495,7 +495,7 @@ func opMstore8(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]
 
 func opSload(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	loc := scope.Stack.peek()
-	hash := common.BytesToHash(loc.Bytes())
+	hash := define.BytesToHash(loc.Bytes())
 	val := interpreter.evm.StateDB.GetState(scope.Contract.Address(), hash)
 	loc.SetBytes(val[:])
 	return nil, nil
@@ -508,7 +508,7 @@ func opSstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
 	}
 	loc := scope.Stack.pop()
 	val := scope.Stack.pop()
-	interpreter.evm.StateDB.SetState(scope.Contract.Address(), common.BytesToHash(loc.Bytes()), common.BytesToHash(val.Bytes()))
+	interpreter.evm.StateDB.SetState(scope.Contract.Address(), define.BytesToHash(loc.Bytes()), define.BytesToHash(val.Bytes()))
 	return nil, nil
 }
 
@@ -589,7 +589,7 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
 	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
 	} else {
-		stackvalue.SetBytes(common.AddrToBytes(addr))
+		stackvalue.SetBytes(define.AddrToBytes(addr))
 	}
 	scope.Stack.push(&stackvalue)
 	// gas返还
@@ -626,7 +626,7 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]
 	if suberr != nil {
 		stackvalue.Clear()
 	} else {
-		stackvalue.SetBytes(common.AddrToBytes(addr))
+		stackvalue.SetBytes(define.AddrToBytes(addr))
 	}
 	scope.Stack.push(&stackvalue)
 	scope.Contract.Gas += returnGas
@@ -651,7 +651,7 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byt
 		retSize   = scope.Stack.pop()
 	)
 	gas := interpreter.evm.callGasTemp
-	toAddr := common.BytesToAddr(addr.Bytes())
+	toAddr := define.BytesToAddr(addr.Bytes())
 	// 从Memory取出数据指针
 	args := scope.Memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
@@ -692,7 +692,7 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([
 		retSize   = scope.Stack.pop()
 	)
 	gas := interpreter.evm.callGasTemp
-	toAddr := common.BytesToAddr(addr.Bytes())
+	toAddr := define.BytesToAddr(addr.Bytes())
 	args := scope.Memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
 	var bigVal = math.Big0
@@ -727,7 +727,7 @@ func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext
 		retSize   = scope.Stack.pop()
 	)
 	gas := interpreter.evm.callGasTemp
-	toAddr := common.BytesToAddr(addr.Bytes())
+	toAddr := define.BytesToAddr(addr.Bytes())
 	args := scope.Memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
 	ret, returnGas, err := interpreter.evm.DelegateCall(scope.Contract, toAddr, args, gas)
@@ -756,7 +756,7 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) 
 		retSize   = scope.Stack.pop()
 	)
 	gas := interpreter.evm.callGasTemp
-	toAddr := common.BytesToAddr(addr.Bytes())
+	toAddr := define.BytesToAddr(addr.Bytes())
 	args := scope.Memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
 	ret, returnGas, err := interpreter.evm.StaticCall(scope.Contract, toAddr, args, gas)
@@ -811,10 +811,10 @@ func opSelfdestruct(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext
 	// 合约地址余额
 	balance := interpreter.evm.StateDB.GetBalance(scope.Contract.Address())
 	// 更新受益人地址余额
-	interpreter.evm.StateDB.AddBalance(common.BytesToAddr(beneficiary.Bytes()), balance)
+	interpreter.evm.StateDB.AddBalance(define.BytesToAddr(beneficiary.Bytes()), balance)
 	interpreter.evm.StateDB.SelfDestruct(scope.Contract.Address())
 	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
-		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), common.BytesToAddr(beneficiary.Bytes()), []byte{}, 0, balance)
+		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), define.BytesToAddr(beneficiary.Bytes()), []byte{}, 0, balance)
 		tracer.CaptureExit([]byte{}, 0, nil)
 	}
 	return nil, errStopToken
@@ -835,10 +835,10 @@ func opSelfdestruct6780(pc *uint64, interpreter *EVMInterpreter, scope *ScopeCon
 	beneficiary := scope.Stack.pop()
 	balance := interpreter.evm.StateDB.GetBalance(scope.Contract.Address())
 	interpreter.evm.StateDB.SubBalance(scope.Contract.Address(), balance)
-	interpreter.evm.StateDB.AddBalance(common.BytesToAddr(beneficiary.Bytes()), balance)
+	interpreter.evm.StateDB.AddBalance(define.BytesToAddr(beneficiary.Bytes()), balance)
 	interpreter.evm.StateDB.Selfdestruct6780(scope.Contract.Address())
 	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
-		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), common.BytesToAddr(beneficiary.Bytes()), []byte{}, 0, balance)
+		tracer.CaptureEnter(SELFDESTRUCT, scope.Contract.Address(), define.BytesToAddr(beneficiary.Bytes()), []byte{}, 0, balance)
 		tracer.CaptureExit([]byte{}, 0, nil)
 	}
 	return nil, errStopToken
@@ -865,15 +865,15 @@ func makeLog(size int) executionFunc {
 		if interpreter.readOnly {
 			return nil, ErrWriteProtection
 		}
-		topics := make([]common.Hash, size)
+		topics := make([]define.Hash, size)
 		mStart, mSize := scope.Stack.pop(), scope.Stack.pop()
 		for i := 0; i < size; i++ {
 			addr := scope.Stack.pop()
-			topics[i] = common.Hash(addr.Bytes())
+			topics[i] = define.Hash(addr.Bytes())
 		}
 
 		d := scope.Memory.GetCopy(int64(mStart.Uint64()), int64(mSize.Uint64()))
-		interpreter.evm.StateDB.AddLog(common.NewLog(scope.Contract.Address(), topics, d, interpreter.evm.Context.BlockNumber.Uint64()))
+		interpreter.evm.StateDB.AddLog(define.NewLog(scope.Contract.Address(), topics, d, interpreter.evm.Context.BlockNumber.Uint64()))
 
 		return nil, nil
 	}
@@ -954,7 +954,7 @@ func opSelfBalance(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext)
 // opTload implements TLOAD opcode
 func opTload(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
 	loc := scope.Stack.peek()
-	hash := common.BytesToHash(loc.Bytes())
+	hash := define.BytesToHash(loc.Bytes())
 	val := interpreter.evm.StateDB.GetTransientState(scope.Contract.Address(), hash)
 	loc.SetBytes(val[:])
 	return nil, nil
@@ -967,7 +967,7 @@ func opTstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
 	}
 	loc := scope.Stack.pop()
 	val := scope.Stack.pop()
-	interpreter.evm.StateDB.SetTransientState(scope.Contract.Address(), common.BytesToHash(loc.Bytes()), common.BytesToHash(val.Bytes()))
+	interpreter.evm.StateDB.SetTransientState(scope.Contract.Address(), define.BytesToHash(loc.Bytes()), define.BytesToHash(val.Bytes()))
 	return nil, nil
 }
 

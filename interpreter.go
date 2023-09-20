@@ -17,7 +17,7 @@
 package evm
 
 import (
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/math"
 )
 
@@ -42,8 +42,8 @@ type EVMInterpreter struct {
 	evm   *EVM
 	table *JumpTable
 
-	hasher    common.KeccakState // Keccak256 hasher instance shared across opcodes
-	hasherBuf common.Hash        // Keccak256 hasher result array shared aross opcodes
+	hasher    define.KeccakState // Keccak256 hasher instance shared across opcodes
+	hasherBuf define.Hash        // Keccak256 hasher result array shared aross opcodes
 
 	readOnly   bool   // Whether to throw on stateful modifications
 	returnData []byte // Last CALL's return data for subsequent reuse

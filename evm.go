@@ -21,15 +21,15 @@ import (
 	"sync/atomic"
 
 	"github.com/holiman/uint256"
-	"github.com/lyonnee/evm/common"
+	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/math"
 	"github.com/lyonnee/evm/params"
 )
 
 type (
-	CanTransferFunc func(StateDB, common.Address, *big.Int) bool
-	TransferFunc    func(StateDB, common.Address, common.Address, *big.Int)
-	GetHashFunc     func(uint64) common.Hash
+	CanTransferFunc func(StateDB, define.Address, *big.Int) bool
+	TransferFunc    func(StateDB, define.Address, define.Address, *big.Int)
+	GetHashFunc     func(uint64) define.Hash
 )
 
 type BlockContext struct {
@@ -42,31 +42,31 @@ type BlockContext struct {
 	GetHash GetHashFunc
 
 	// Block information
-	Coinbase      common.Address // Provides information for COINBASE
+	Coinbase      define.Address // Provides information for COINBASE
 	GasLimit      uint64         // Provides information for GASLIMIT
 	BlockNumber   *big.Int       // Provides information for NUMBER
 	Time          uint64         // Provides information for TIME
 	Difficulty    *big.Int       // Provides information for DIFFICULTY
 	BaseFee       *big.Int       // Provides information for BASEFEE
-	Random        *common.Hash   // Provides information for PREVRANDAO
+	Random        *define.Hash   // Provides information for PREVRANDAO
 	ExcessBlobGas *uint64        // ExcessBlobGas field in the header, needed to compute the data
 }
 
 type TxContext struct {
 	// Message information
-	Origin     common.Address // Provides information for ORIGIN
+	Origin     define.Address // Provides information for ORIGIN
 	GasPrice   *big.Int       // Provides information for GASPRICE
-	BlobHashes []common.Hash  // Provides information for BLOBHASH
+	BlobHashes []define.Hash  // Provides information for BLOBHASH
 }
 
 type codeAndHash struct {
 	code []byte
-	hash common.Hash
+	hash define.Hash
 }
 
-func (c *codeAndHash) Hash() common.Hash {
-	if c.hash == common.NilHash {
-		c.hash = common.Keccak256Hash(c.code)
+func (c *codeAndHash) Hash() define.Hash {
+	if c.hash == define.NilHash {
+		c.hash = define.Keccak256Hash(c.code)
 	}
 	return c.hash
 }
@@ -124,7 +124,7 @@ func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
 }
 
 // 调用其他合约
-func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+func (evm *EVM) Call(caller ContractRef, addr define.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// 检查调用深度,避免无限递归调用。
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
@@ -199,7 +199,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	return ret, gas, err
 }
 
-func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+func (evm *EVM) CallCode(caller ContractRef, addr define.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
@@ -237,7 +237,7 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 	return ret, gas, err
 }
 
-func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+func (evm *EVM) DelegateCall(caller ContractRef, addr define.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
@@ -279,7 +279,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 // 以给定的输入作为参数执行与addr相关联的合约，
 // 但是不允许在调用期间对状态进行任何修改
 // 如果试图执行修改状态的操作码将导致异常
-func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+func (evm *EVM) StaticCall(caller ContractRef, addr define.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
@@ -309,7 +309,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
 	} else {
-		// At this point, we use a copy of common.Address. If we don't, the go compiler will
+		// At this point, we use a copy of define.Address. If we don't, the go compiler will
 		// leak the 'contract' to the outer scope, and make allocation for 'contract'
 		// even if the actual execution ends on RunPrecompiled above.
 		addrCopy := addr
@@ -332,26 +332,26 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	return ret, gas, err
 }
 
-func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
-	contractAddr = common.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
+func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr define.Address, leftOverGas uint64, err error) {
+	contractAddr = define.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
 	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
 }
 
-func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
-	contractAddr = common.CreateAddress2(caller.Address(), salt.Bytes32(), nil)
+func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr define.Address, leftOverGas uint64, err error) {
+	contractAddr = define.CreateAddress2(caller.Address(), salt.Bytes32(), nil)
 	return evm.create(caller, &codeAndHash{code: code}, gas, endowment, contractAddr, CREATE2)
 }
 
-func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
+func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address define.Address, typ OpCode) ([]byte, define.Address, uint64, error) {
 	if evm.depth > params.CALL_CREATE_DEPTH {
-		return nil, common.NilAddr, gas, ErrDepth
+		return nil, define.NilAddr, gas, ErrDepth
 	}
 	if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
-		return nil, common.NilAddr, gas, ErrInsufficientBalance
+		return nil, define.NilAddr, gas, ErrInsufficientBalance
 	}
 	nonce := evm.StateDB.GetNonce(caller.Address())
 	if nonce+1 < nonce {
-		return nil, common.NilAddr, gas, ErrNonceUintOverflow
+		return nil, define.NilAddr, gas, ErrNonceUintOverflow
 	}
 	evm.StateDB.SetNonce(caller.Address(), nonce+1)
 	if evm.chainRules.IsBerlin {
@@ -359,8 +359,8 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	contractHash := evm.StateDB.GetCodeHash(address)
-	if evm.StateDB.GetNonce(address) != 0 || (contractHash != common.NilHash && contractHash != common.EmptyCodeHash) {
-		return nil, common.NilAddr, 0, ErrContractAddressCollision
+	if evm.StateDB.GetNonce(address) != 0 || (contractHash != define.NilHash && contractHash != define.EmptyCodeHash) {
+		return nil, define.NilAddr, 0, ErrContractAddressCollision
 	}
 
 	snapshot := evm.StateDB.Snapshot()
@@ -424,8 +424,8 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	return ret, address, contract.Gas, err
 }
 
-func (evm *EVM) precompile(addr common.Address) (PrecompiledContract, bool) {
-	var precompiles map[common.Address]PrecompiledContract
+func (evm *EVM) precompile(addr define.Address) (PrecompiledContract, bool) {
+	var precompiles map[define.Address]PrecompiledContract
 	switch {
 	case evm.chainRules.IsCancun:
 		precompiles = PrecompiledContractsCancun
