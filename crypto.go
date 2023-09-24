@@ -14,27 +14,28 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the evm library. If not, see <http://www.gnu.org/licenses/>.
 
-package define
+package evm
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"hash"
+
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-var NilAddr Address = Address{}
-
-// TODO: 修改Address 类型的定义 和 下面类型转换的 方法
-
-type Address = common.Address
-
-func BytesToAddr(b []byte) Address {
-	return common.BytesToAddress(b)
+type KeccakState interface {
+	hash.Hash
+	Read([]byte) (int, error)
 }
 
-func AddrToBytes(a Address) []byte {
-	return a.Bytes()
+func NewKeccakState() KeccakState {
+	return crypto.NewKeccakState()
 }
 
-// 修改Create方法时,调用处可能也需要修改
-var CreateAddress = crypto.CreateAddress
-var CreateAddress2 = crypto.CreateAddress2
+func Keccak256Hash(data ...[]byte) (h Hash) {
+	d := NewKeccakState()
+	for _, b := range data {
+		d.Write(b)
+	}
+	d.Read(h[:])
+	return h
+}

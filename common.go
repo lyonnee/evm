@@ -21,7 +21,6 @@ import (
 	"math"
 
 	"github.com/holiman/uint256"
-	"github.com/lyonnee/evm/define"
 )
 
 // calcMemSize64 calculates the required memory size, and returns
@@ -101,7 +100,7 @@ func Hex2Bytes(str string) []byte {
 	return h
 }
 
-func HexToAddress(s string) define.Address { return define.BytesToAddr(FromHex(s)) }
+func HexToAddress(s string) Address { return BytesToAddr(FromHex(s)) }
 
 func Bytes2Hex(d []byte) string {
 	return hex.EncodeToString(d)

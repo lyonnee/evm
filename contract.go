@@ -20,33 +20,32 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
-	"github.com/lyonnee/evm/define"
 )
 
 type ContractRef interface {
-	Address() define.Address
+	Address() Address
 }
 
-type AccountRef define.Address
+type AccountRef Address
 
-func (ar AccountRef) Address() define.Address {
-	return (define.Address)(ar)
+func (ar AccountRef) Address() Address {
+	return (Address)(ar)
 }
 
 type Contract struct {
 	// Callercommon.Address is the result of the caller which initialised this
 	// contract. However when the "call method" is delegated this value
 	// needs to be initialised to that of the caller's caller.
-	CallerAddress define.Address
+	CallerAddress Address
 	caller        ContractRef
 	self          ContractRef
 
-	jumpdests map[define.Hash]bitvec // Aggregated result of JUMPDEST analysis.
-	analysis  bitvec                 // Locally cached result of JUMPDEST analysis
+	jumpdests map[Hash]bitvec // Aggregated result of JUMPDEST analysis.
+	analysis  bitvec          // Locally cached result of JUMPDEST analysis
 
 	Code     []byte
-	CodeHash define.Hash
-	CodeAddr *define.Address
+	CodeHash Hash
+	CodeAddr *Address
 	Input    []byte
 
 	Gas   uint64
@@ -55,7 +54,7 @@ type Contract struct {
 
 // 返回合约调用者的地址
 // 委托调用(DelegateCall)时，调用方将递归地调用调用方，返回调用方(合约)的调用方(合约/用户)地址
-func (c *Contract) Caller() define.Address {
+func (c *Contract) Caller() Address {
 	return c.CallerAddress
 }
 
@@ -70,7 +69,7 @@ func (c *Contract) UseGas(gas uint64) (ok bool) {
 }
 
 // 返回合约地址
-func (c *Contract) Address() define.Address {
+func (c *Contract) Address() Address {
 	return c.self.Address()
 }
 
@@ -81,7 +80,7 @@ func (c *Contract) Value() *big.Int {
 
 // SetCallCode sets the code of the contract and define.Address of the backing data
 // object
-func (c *Contract) SetCallCode(addr *define.Address, hash define.Hash, code []byte) {
+func (c *Contract) SetCallCode(addr *Address, hash Hash, code []byte) {
 	c.Code = code
 	c.CodeHash = hash
 	c.CodeAddr = addr
@@ -89,7 +88,7 @@ func (c *Contract) SetCallCode(addr *define.Address, hash define.Hash, code []by
 
 // SetCodeOptionalHash can be used to provide code, but it's optional to provide hash.
 // In case hash is not provided, the jumpdest analysis will not be saved to the parent context
-func (c *Contract) SetCodeOptionalHash(addr *define.Address, codeAndHash *codeAndHash) {
+func (c *Contract) SetCodeOptionalHash(addr *Address, codeAndHash *codeAndHash) {
 	c.Code = codeAndHash.code
 	c.CodeHash = codeAndHash.hash
 	c.CodeAddr = addr
@@ -119,7 +118,7 @@ func (c *Contract) isCode(udest uint64) bool {
 	// Do we have a contract hash already?
 	// If we do have a hash, that means it's a 'regular' contract. For regular
 	// contracts ( not temporary initcode), we store the analysis in a map
-	if c.CodeHash != define.NilHash {
+	if c.CodeHash != NilHash {
 		// Does parent context have the analysis?
 		analysis, exist := c.jumpdests[c.CodeHash]
 		if !exist {
@@ -170,7 +169,7 @@ func NewContract(caller ContractRef, object ContractRef, value *big.Int, gas uin
 		// Reuse JUMPDEST analysis from parent context if available.
 		c.jumpdests = parent.jumpdests
 	} else {
-		c.jumpdests = make(map[define.Hash]bitvec)
+		c.jumpdests = make(map[Hash]bitvec)
 	}
 
 	// Gas should be a pointer so it can safely be reduced through the run

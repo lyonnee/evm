@@ -14,15 +14,19 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the evm library. If not, see <http://www.gnu.org/licenses/>.
 
-package define
+package evm
 
-import (
-	"github.com/ethereum/go-ethereum/common"
-)
+const HashLength int = 32
 
-type Hash = common.Hash
+type Hash [HashLength]byte
 
-// TODO: 修改Hash 类型的定义 和 下面类型转换的 方法
+func (h *Hash) SetBytes(b []byte) {
+	if len(b) > len(h) {
+		b = b[len(b)-HashLength:]
+	}
+
+	copy(h[HashLength-len(b):], b)
+}
 
 var (
 	NilHash       Hash = Hash{}
@@ -30,9 +34,9 @@ var (
 )
 
 func BytesToHash(b []byte) Hash {
-	return common.BytesToHash(b)
+	h := Hash{}
+	h.SetBytes(b)
+	return h
 }
 
-func HashToBytes(h Hash) []byte {
-	return h.Bytes()
-}
+func HashToBytes(h Hash) []byte { return h[:] }

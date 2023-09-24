@@ -14,30 +14,45 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the evm library. If not, see <http://www.gnu.org/licenses/>.
 
-package define
+package evm
 
 import (
-	"hash"
-
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
-type KeccakState interface {
-	hash.Hash
-	Read([]byte) (int, error)
+const AddressLength int = 32
+
+type Address [AddressLength]byte
+
+func (a *Address) Bytes() []byte {
+	return a[:]
 }
 
-// TODO: 可自定义Keccak算法
-
-func NewKeccakState() KeccakState {
-	return crypto.NewKeccakState()
-}
-
-func Keccak256Hash(data ...[]byte) (h Hash) {
-	d := NewKeccakState()
-	for _, b := range data {
-		d.Write(b)
+func (a *Address) SetBytes(b []byte) {
+	if len(b) > len(a) {
+		b = b[len(b)-AddressLength:]
 	}
-	d.Read(h[:])
-	return h
+	copy(a[AddressLength-len(b):], b)
+}
+
+var NilAddr Address = Address{}
+
+func BytesToAddr(b []byte) Address {
+	a := Address{}
+	a.SetBytes(b)
+	return a
+}
+
+func AddrToBytes(a Address) []byte {
+	return a.Bytes()
+}
+
+func CreateAddress(a Address, nonce uint64) Address {
+	data, _ := rlp.EncodeToBytes([]interface{}{a, nonce})
+	return BytesToAddr(crypto.Keccak256(data))
+}
+
+func CreateAddress2(a Address, salt [32]byte, inithash []byte) Address {
+	return BytesToAddr(crypto.Keccak256([]byte{0xff}, a.Bytes(), salt[:], inithash))
 }

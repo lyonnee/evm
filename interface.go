@@ -18,24 +18,22 @@ package evm
 
 import (
 	"math/big"
-
-	"github.com/lyonnee/evm/define"
 )
 
 type StateDB interface {
-	CreateAccount(define.Address)
+	CreateAccount(Address)
 
-	SubBalance(define.Address, *big.Int)
-	AddBalance(define.Address, *big.Int)
-	GetBalance(define.Address) *big.Int
+	SubBalance(Address, *big.Int)
+	AddBalance(Address, *big.Int)
+	GetBalance(Address) *big.Int
 
-	GetNonce(define.Address) uint64
-	SetNonce(define.Address, uint64)
+	GetNonce(Address) uint64
+	SetNonce(Address, uint64)
 
-	GetCodeHash(define.Address) define.Hash
-	GetCode(define.Address) []byte
-	SetCode(define.Address, []byte)
-	GetCodeSize(define.Address) int
+	GetCodeHash(Address) Hash
+	GetCode(Address) []byte
+	SetCode(Address, []byte)
+	GetCodeSize(Address) int
 
 	// 添加退款金额
 	AddRefund(uint64)
@@ -45,52 +43,52 @@ type StateDB interface {
 
 	// 返回的是当前执行context提交到数据库的已提交状态(committed state)
 	// 也就是上次日志记录点(journal checkpoint)时的状态
-	GetCommittedState(define.Address, define.Hash) define.Hash
+	GetCommittedState(Address, Hash) Hash
 	// 返回的是当前VM执行过程中的当前状态(current state),包含未提交的变更
 	// 反映了所有最近的写入,但未提交至底层数据库
-	GetState(define.Address, define.Hash) define.Hash
-	SetState(define.Address, define.Hash, define.Hash)
+	GetState(Address, Hash) Hash
+	SetState(Address, Hash, Hash)
 
-	GetTransientState(addr define.Address, key define.Hash) define.Hash
-	SetTransientState(addr define.Address, key, val define.Hash)
+	GetTransientState(addr Address, key Hash) Hash
+	SetTransientState(addr Address, key, val Hash)
 
-	SelfDestruct(define.Address)
-	HasSelfDestructed(define.Address) bool
+	SelfDestruct(Address)
+	HasSelfDestructed(Address) bool
 
-	Selfdestruct6780(define.Address)
+	Selfdestruct6780(Address)
 
 	// Exist reports whether the given account exists in state.
 	// Notably this should also return true for self-destructed accounts.
-	Exist(define.Address) bool
+	Exist(Address) bool
 	// Empty returns whether the given account is empty. Empty
 	// is defined according to EIP161 (balance = nonce = code = 0).
-	Empty(define.Address) bool
+	Empty(Address) bool
 
-	AddressInAccessList(addr define.Address) bool
-	SlotInAccessList(addr define.Address, slot define.Hash) (addressOk bool, slotOk bool)
+	AddressInAccessList(addr Address) bool
+	SlotInAccessList(addr Address, slot Hash) (addressOk bool, slotOk bool)
 	// Addcommon.AddressToAccessList adds the given define.Address to the access list. This operation is safe to perform
 	// even if the feature/fork is not active yet
-	AddAddressToAccessList(addr define.Address)
+	AddAddressToAccessList(addr Address)
 	// AddSlotToAccessList adds the given (define.Address,slot) to the access list. This operation is safe to perform
 	// even if the feature/fork is not active yet
-	AddSlotToAccessList(addr define.Address, slot define.Hash)
+	AddSlotToAccessList(addr Address, slot Hash)
 
 	RevertToSnapshot(int)
 	Snapshot() int
 
-	AddLog(define.Log)
-	AddPreimage(define.Hash, []byte)
+	AddLog(Log)
+	AddPreimage(Hash, []byte)
 }
 
 // CallContext provides a basic interface for the EVM calling conventions. The EVM
 // depends on this context being implemented for doing subcalls and initialising new EVM contracts.
 type CallContext interface {
 	// Call calls another contract.
-	Call(env *EVM, me ContractRef, addr define.Address, data []byte, gas, value *big.Int) ([]byte, error)
+	Call(env *EVM, me ContractRef, addr Address, data []byte, gas, value *big.Int) ([]byte, error)
 	// CallCode takes another contracts code and execute within our own context
-	CallCode(env *EVM, me ContractRef, addr define.Address, data []byte, gas, value *big.Int) ([]byte, error)
+	CallCode(env *EVM, me ContractRef, addr Address, data []byte, gas, value *big.Int) ([]byte, error)
 	// DelegateCall is same as CallCode except sender and value is propagated from parent to child scope
-	DelegateCall(env *EVM, me ContractRef, addr define.Address, data []byte, gas *big.Int) ([]byte, error)
+	DelegateCall(env *EVM, me ContractRef, addr Address, data []byte, gas *big.Int) ([]byte, error)
 	// Create creates a new contract
-	Create(env *EVM, me ContractRef, data []byte, gas, value *big.Int) ([]byte, define.Address, error)
+	Create(env *EVM, me ContractRef, data []byte, gas, value *big.Int) ([]byte, Address, error)
 }

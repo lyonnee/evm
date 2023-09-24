@@ -18,18 +18,16 @@ package evm
 
 import (
 	"math/big"
-
-	"github.com/lyonnee/evm/define"
 )
 
 type EVMLogger interface {
 	CaptureTxStart(gasLimit uint64)
 	CaptureTxEnd(restGas uint64)
 
-	CaptureStart(env *EVM, from define.Address, to define.Address, create bool, input []byte, gas uint64, value *big.Int)
+	CaptureStart(env *EVM, from Address, to Address, create bool, input []byte, gas uint64, value *big.Int)
 	CaptureEnd(output []byte, gasUsed uint64, err error)
 
-	CaptureEnter(typ OpCode, from define.Address, to define.Address, input []byte, gas uint64, value *big.Int)
+	CaptureEnter(typ OpCode, from Address, to Address, input []byte, gas uint64, value *big.Int)
 	CaptureExit(output []byte, gasUsed uint64, err error)
 
 	CaptureState(pc uint64, op OpCode, gas, cost uint64, scope *ScopeContext, rData []byte, depth int, err error)

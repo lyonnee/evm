@@ -19,7 +19,6 @@ package evm
 import (
 	"errors"
 
-	"github.com/lyonnee/evm/define"
 	"github.com/lyonnee/evm/math"
 	"github.com/lyonnee/evm/params"
 )
@@ -32,7 +31,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 
 		var (
 			x, y    = stack.peek(), stack.Back(1)
-			slot    = define.BytesToHash(x.Bytes())
+			slot    = BytesToHash(x.Bytes())
 			current = evm.StateDB.GetState(contract.Address(), slot)
 			cost    = uint64(0)
 		)
@@ -48,30 +47,30 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 				panic("impossible case: define.Address was not present in access list during sstore op")
 			}
 		}
-		value := define.BytesToHash(y.Bytes())
+		value := BytesToHash(y.Bytes())
 
 		if current == value {
 			return cost + params.WarmStorageReadCostEIP2929, nil
 		}
-		original := evm.StateDB.GetCommittedState(contract.Address(), define.BytesToHash(x.Bytes()))
+		original := evm.StateDB.GetCommittedState(contract.Address(), BytesToHash(x.Bytes()))
 		if original == current {
-			if original == define.NilHash {
+			if original == NilHash {
 				return cost + params.SstoreSetGasEIP2200, nil
 			}
-			if value == define.NilHash {
+			if value == NilHash {
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 			return cost + (params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929), nil
 		}
-		if original != define.NilHash {
-			if current == define.NilHash {
+		if original != NilHash {
+			if current == NilHash {
 				evm.StateDB.SubRefund(clearingRefund)
-			} else if value == define.NilHash {
+			} else if value == NilHash {
 				evm.StateDB.AddRefund(clearingRefund)
 			}
 		}
 		if original == value {
-			if original == define.NilHash {
+			if original == NilHash {
 				evm.StateDB.AddRefund(params.SstoreSetGasEIP2200 - params.WarmStorageReadCostEIP2929)
 			} else {
 				evm.StateDB.AddRefund((params.SstoreResetGasEIP2200 - params.ColdSloadCostEIP2929) - params.WarmStorageReadCostEIP2929)
@@ -83,7 +82,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 
 func gasSLoadEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	loc := stack.peek()
-	slot := define.BytesToHash(loc.Bytes())
+	slot := BytesToHash(loc.Bytes())
 
 	if _, slotPresent := evm.StateDB.SlotInAccessList(contract.Address(), slot); !slotPresent {
 		evm.StateDB.AddSlotToAccessList(contract.Address(), slot)
@@ -98,7 +97,7 @@ func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 	if err != nil {
 		return 0, err
 	}
-	addr := define.BytesToAddr(stack.peek().Bytes())
+	addr := BytesToAddr(stack.peek().Bytes())
 	// Check slot presence in the access list
 	if !evm.StateDB.AddressInAccessList(addr) {
 		evm.StateDB.AddAddressToAccessList(addr)
@@ -113,7 +112,7 @@ func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 }
 
 func gasEip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	addr := define.BytesToAddr(stack.peek().Bytes())
+	addr := BytesToAddr(stack.peek().Bytes())
 	// Check slot presence in the access list
 	if !evm.StateDB.AddressInAccessList(addr) {
 		// If the caller cannot afford the cost, this change will be rolled back
@@ -126,7 +125,7 @@ func gasEip2929AccountCheck(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 
 func makeCallVariantGasCallEIP2929(oldCalculator gasFunc) gasFunc {
 	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-		addr := define.BytesToAddr(stack.peek().Bytes())
+		addr := BytesToAddr(stack.peek().Bytes())
 		// Check slot presence in the access list
 		warmAccess := evm.StateDB.AddressInAccessList(addr)
 		// The WarmStorageReadCostEIP2929 (100) is already deducted in the form of a constant cost, so
@@ -190,7 +189,7 @@ func makeSelfdestructGasFn(refundsEnabled bool) gasFunc {
 	gasFunc := func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 		var (
 			gas     uint64
-			address = define.BytesToAddr(stack.peek().Bytes())
+			address = BytesToAddr(stack.peek().Bytes())
 		)
 		if !evm.StateDB.AddressInAccessList(address) {
 			// If the caller cannot afford the cost, this change will be rolled back
