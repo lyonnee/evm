@@ -32,10 +32,16 @@ func NewKeccakState() KeccakState {
 }
 
 func Keccak256Hash(data ...[]byte) (h Hash) {
+	h.SetBytes(Keccak256(data...))
+	return h
+}
+
+func Keccak256(data ...[]byte) []byte {
+	b := make([]byte, 32)
 	d := NewKeccakState()
 	for _, b := range data {
 		d.Write(b)
 	}
-	d.Read(h[:])
-	return h
+	d.Read(b)
+	return b
 }

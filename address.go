@@ -17,7 +17,8 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/crypto"
+	"encoding/hex"
+
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -36,6 +37,10 @@ func (a *Address) SetBytes(b []byte) {
 	copy(a[AddressLength-len(b):], b)
 }
 
+func (a Address) Hex() string {
+	return hex.EncodeToString(a.Bytes())
+}
+
 var NilAddr Address = Address{}
 
 func BytesToAddr(b []byte) Address {
@@ -50,9 +55,9 @@ func AddrToBytes(a Address) []byte {
 
 func CreateAddress(a Address, nonce uint64) Address {
 	data, _ := rlp.EncodeToBytes([]interface{}{a, nonce})
-	return BytesToAddr(crypto.Keccak256(data))
+	return BytesToAddr(Keccak256(data))
 }
 
 func CreateAddress2(a Address, salt [32]byte, inithash []byte) Address {
-	return BytesToAddr(crypto.Keccak256([]byte{0xff}, a.Bytes(), salt[:], inithash))
+	return BytesToAddr(Keccak256([]byte{0xff}, a.Bytes(), salt[:], inithash))
 }

@@ -28,6 +28,8 @@ func (h *Hash) SetBytes(b []byte) {
 	copy(h[HashLength-len(b):], b)
 }
 
+func (h Hash) Bytes() []byte { return h[:] }
+
 var (
 	NilHash       Hash = Hash{}
 	EmptyCodeHash Hash = Keccak256Hash(nil)
