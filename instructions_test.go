@@ -720,7 +720,7 @@ func TestCreate2Addreses(t *testing.T) {
 			expected: "0xE33C0C7F7df4809055C3ebA6c09CFe4BaF1BD9e0",
 		},
 	} {
-		origin := BytesToAddr(FromHex(tt.origin))
+		origin := FromHex(tt.origin)
 		salt := BytesToHash(FromHex(tt.salt))
 		code := FromHex(tt.code)
 		codeHash := Keccak256(code)

@@ -332,12 +332,12 @@ func (evm *EVM) StaticCall(caller ContractRef, addr Address, input []byte, gas u
 }
 
 func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr Address, leftOverGas uint64, err error) {
-	contractAddr = CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
+	contractAddr = CreateAddress(caller.Address().Bytes(), evm.StateDB.GetNonce(caller.Address()))
 	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
 }
 
 func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr Address, leftOverGas uint64, err error) {
-	contractAddr = CreateAddress2(caller.Address(), salt.Bytes32(), nil)
+	contractAddr = CreateAddress2(caller.Address().Bytes(), salt.Bytes32(), nil)
 	return evm.create(caller, &codeAndHash{code: code}, gas, endowment, contractAddr, CREATE2)
 }
 

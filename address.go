@@ -26,7 +26,7 @@ const AddressLength int = 32
 
 type Address [AddressLength]byte
 
-func (a *Address) Bytes() []byte {
+func (a Address) Bytes() []byte {
 	return a[:]
 }
 
@@ -53,11 +53,11 @@ func AddrToBytes(a Address) []byte {
 	return a.Bytes()
 }
 
-func CreateAddress(a Address, nonce uint64) Address {
+func CreateAddress(a []byte, nonce uint64) Address {
 	data, _ := rlp.EncodeToBytes([]interface{}{a, nonce})
 	return BytesToAddr(Keccak256(data))
 }
 
-func CreateAddress2(a Address, salt [32]byte, inithash []byte) Address {
-	return BytesToAddr(Keccak256([]byte{0xff}, a.Bytes(), salt[:], inithash))
+func CreateAddress2(a []byte, salt [32]byte, inithash []byte) Address {
+	return BytesToAddr(Keccak256([]byte{0xff}, a, salt[:], inithash))
 }
