@@ -23,6 +23,4 @@ Contributions are welcome! Open an issue or PR.
 
 ## License
 
-EVM is released under the [MIT License](LICENSE).
-
-Let me know if you would like any sections expanded or modified!
+EVM is released under the [GNU GENERAL PUBLIC LICENSE](LICENSE).
